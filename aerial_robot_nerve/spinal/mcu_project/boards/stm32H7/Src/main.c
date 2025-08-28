@@ -98,8 +98,8 @@ osThreadId idleTaskHandle;
 osThreadId rosPublishHandle;
 osThreadId voltageHandle;
 osThreadId canRxHandle;
+osThreadId ServoTaskHandle;
 osTimerId coreTaskTimerHandle;
-osTimerId ServoTimerHandle;
 osMutexId rosPubMutexHandle;
 osMutexId flightControlMutexHandle;
 osSemaphoreId coreTaskSemHandle;
@@ -147,7 +147,7 @@ void rosPublishTask(void const * argument);
 void voltageTask(void const * argument);
 void canRxTask(void const * argument);
 void coreTaskEvokeCb(void const * argument);
-void ServoCallback(void const * argument);
+void ServoTaskCallback(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -306,17 +306,10 @@ int main(void)
   osTimerDef(coreTaskTimer, coreTaskEvokeCb);
   coreTaskTimerHandle = osTimerCreate(osTimer(coreTaskTimer), osTimerPeriodic, NULL);
 
-  /* definition and creation of ServoTimer */
-  osTimerDef(ServoTimer, ServoCallback);
-  ServoTimerHandle = osTimerCreate(osTimer(ServoTimer), osTimerPeriodic, NULL);
-
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   osTimerStart(coreTaskTimerHandle, 1); // 1 ms (1kHz)
 
-#ifdef SERVO_FLAG    // possibily interfere with the DShot signal generation by TIM1
-  osTimerStart(ServoTimerHandle, 5); // ms  Should be quicker than the minimumal period of the servo in dynamixel_serial.h, i.e.,10ms
-#endif
 
   /* USER CODE END RTOS_TIMERS */
 
@@ -332,6 +325,10 @@ int main(void)
   /* definition and creation of coreTask */
   osThreadDef(coreTask, coreTaskFunc, osPriorityRealtime, 0, 512);
   coreTaskHandle = osThreadCreate(osThread(coreTask), NULL);
+
+  /* definition and creation of ServoTask */
+  osThreadDef(ServoTask, ServoTaskCallback, osPriorityRealtime, 0, 256);
+  ServoTaskHandle = osThreadCreate(osThread(ServoTask), NULL);
 
   /* definition and creation of rosSpinTask */
   osThreadDef(rosSpinTask, rosSpinTaskFunc, osPriorityNormal, 0, 256);
@@ -1297,12 +1294,18 @@ void coreTaskEvokeCb(void const * argument)
   /* USER CODE END coreTaskEvokeCb */
 }
 
-/* ServoCallback function */
-void ServoCallback(void const * argument) // use semaphore to avoid conflict with coreTask
+/* ServoTaskCallback function */
+__weak void ServoTaskCallback(void const * argument) // use semaphore to avoid conflict with coreTask
 {
-  /* USER CODE BEGIN ServoCallback */
-  servo_.update();
-  /* USER CODE END ServoCallback */
+  /* USER CODE BEGIN ServoTaskCallback */
+  for(;;){
+    #ifdef SERVO_FLAG
+    servo_.update();
+    #endif
+    osDelay(1);
+  
+  }
+  /* USER CODE END ServoTaskCallback */
 }
 
 /* MPU Configuration */

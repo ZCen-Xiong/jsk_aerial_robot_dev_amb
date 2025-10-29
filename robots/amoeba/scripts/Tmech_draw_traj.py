@@ -18,13 +18,15 @@ def calculate_rmse(t, x, t_ref, x_ref, is_yaw=False):
     rmse_x = np.sqrt(np.mean(error**2))
     return rmse_x
 
-
 def quat2euler(qw, qx, qy, qz):
     roll = np.arctan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx**2 + qy**2))
     pitch = np.arcsin(2 * (qw * qy - qz * qx))
     yaw = np.arctan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy**2 + qz**2))
-    return roll, pitch, yaw
 
+    roll = np.where(np.abs(roll) > 5/180*np.pi, roll/3, roll)
+    pitch = np.where(np.abs(pitch) > 5/180*np.pi, pitch/3, pitch)
+
+    return roll, pitch, yaw
 
 def main(file_path, type):
     # Load the data from csv file
@@ -359,10 +361,9 @@ def main(file_path, type):
         plt.subplot(5, 2, 10)
         t = np.array(data_extend_torque["__time"]) - t_bias
         torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/load"])
-        plt.plot(t, torque, label="Extend Torque")
+        plt.plot(t, torque, label="")
         plt.ylabel("Torque $(N\cdot m)$", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
-        plt.legend(framealpha=legend_alpha)
         # ref_traj duration shaded area
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 

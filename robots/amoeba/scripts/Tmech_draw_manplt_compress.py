@@ -26,7 +26,7 @@ def quat2euler(qw, qx, qy, qz):
     return roll, pitch, yaw
 
 
-def main(file_path, type):
+def main(file_path, type, t_ref_start, t_ref_end):
     # Load the data from csv file
     data = pd.read_csv(file_path)
 
@@ -44,18 +44,18 @@ def main(file_path, type):
         data_xyz_ref = data[
             [
                 "__time",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z",
+                "/beetle1/nmpc/viz_ref/poses[0]/position/x",
+                "/beetle1/nmpc/viz_ref/poses[0]/position/y",
+                "/beetle1/nmpc/viz_ref/poses[0]/position/z",
             ]
         ]
     except KeyError:
         # assign the reference trajectory to zero
         data_xyz_ref = pd.DataFrame()
         data_xyz_ref["__time"] = data_xyz["__time"]
-        data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x"] = -0.095
-        data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y"] = -0.015
-        data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z"] = 0.6
+        data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/x"] = -0.095
+        data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/y"] = -0.015
+        data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/z"] = 0.6
 
     data_xyz = data_xyz.dropna()
     data_xyz_ref = data_xyz_ref.dropna()
@@ -75,20 +75,20 @@ def main(file_path, type):
         data_qwxyz_ref = data[
             [
                 "__time",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/w",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/x",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/y",
-                "/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/z",
+                "/beetle1/nmpc/viz_ref/poses[0]/orientation/w",
+                "/beetle1/nmpc/viz_ref/poses[0]/orientation/x",
+                "/beetle1/nmpc/viz_ref/poses[0]/orientation/y",
+                "/beetle1/nmpc/viz_ref/poses[0]/orientation/z",
             ]
         ]
     except KeyError:
         # assign the reference trajectory to zero
         data_qwxyz_ref = pd.DataFrame()
         data_qwxyz_ref["__time"] = data_qwxyz["__time"]
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/w"] = 0
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/x"] = 0
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/y"] = 0
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/z"] = 0
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/w"] = 0
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/x"] = 0
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/y"] = 0
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/z"] = 0
 
     data_qwxyz_ref = data_qwxyz_ref.dropna()
     data_qwxyz = data_qwxyz.dropna()
@@ -97,10 +97,10 @@ def main(file_path, type):
     data_euler_ref = pd.DataFrame()
     data_euler_ref["__time"] = data_qwxyz_ref["__time"]
     data_euler_ref["roll"], data_euler_ref["pitch"], data_euler_ref["yaw"] = quat2euler(
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/w"],
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/x"],
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/y"],
-        data_qwxyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/rotation/z"],
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/w"],
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/x"],
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/y"],
+        data_qwxyz_ref["/beetle1/nmpc/viz_ref/poses[0]/orientation/z"],
     )
 
     data_euler = pd.DataFrame()
@@ -170,7 +170,7 @@ def main(file_path, type):
         plt.style.use(["science", "grid"])
 
         plt.rcParams.update({"font.size": 11})  # default is 10
-        label_size = 14
+        label_size = 12
 
         fig = plt.figure(figsize=(7, 7))
 
@@ -187,7 +187,7 @@ def main(file_path, type):
         
         # X position
         t_ref = np.array(data_xyz_ref["__time"]) - t_bias
-        x_ref = np.array(data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x"])
+        x_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/x"])
         # virtual legend for ref
         plt.plot(t_ref, x_ref, label="ref", linestyle="--", color="k")
         # actual data cover the virtual legend
@@ -199,7 +199,7 @@ def main(file_path, type):
 
         # Y position
         t_ref = np.array(data_xyz_ref["__time"]) - t_bias
-        y_ref = np.array(data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y"])
+        y_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/y"])
         plt.plot(t_ref, y_ref, label="", linestyle="--", color=color_y)
 
         t = np.array(data_xyz["__time"]) - t_bias
@@ -208,7 +208,7 @@ def main(file_path, type):
 
         # Z position
         t_ref = np.array(data_xyz_ref["__time"]) - t_bias
-        z_ref = np.array(data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z"])
+        z_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/z"])
         plt.plot(t_ref, z_ref, label="", linestyle="--", color=color_z)
 
         t = np.array(data_xyz["__time"]) - t_bias
@@ -216,8 +216,9 @@ def main(file_path, type):
         plt.plot(t, z, label="Z", color=color_z)
 
         # Add translucent orange rectangle covering the reference time range
-        t_ref_start = t_ref[0]
-        t_ref_end = t_ref[-1]
+        # t_ref_start = t_ref[0]
+        # t_ref_end = t_ref[-1]
+
         # ref_traj duration shaded area
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
@@ -376,4 +377,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.file_path, args.type)
+    # grasp
+    t_ref_start = 5.0  # seconds
+    t_ref_end = 25.0  # seconds
+    main(args.file_path, args.type, t_ref_start, t_ref_end)

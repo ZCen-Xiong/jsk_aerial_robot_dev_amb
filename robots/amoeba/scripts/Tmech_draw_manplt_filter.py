@@ -366,36 +366,63 @@ def main(file_path, type, t_ref_start, t_ref_end):
         # torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/load"])
 
         # only for valve task
-        # please delete all the torque value that are greater than 1000, and delete the index in t too
+        # Set invalid torque values to 0 instead of deleting them
         torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/angle"])
-        valid_indices = np.abs(torque) <= 1000
-        t = t[valid_indices]
-        torque = torque[valid_indices]
         
-        # Additional filtering: compare adjacent values, remove larger absolute value if difference > 400
-        indices_to_keep = []
-        if len(torque) > 0:
-            indices_to_keep.append(0)  # Always keep the first value
-            
-            for i in range(1, len(torque)):
-                # Compare with previous kept value
-                prev_idx = indices_to_keep[-1]
-                diff = abs(torque[i] - torque[prev_idx])
+        # remove servo value
+        # # --------------------valve
+        # task_nominal = 150
+        # task_diff = 250
+        # --------------------grasp
+        task_nominal = 200
+        task_diff = 200
+        mask = np.abs(torque) > task_nominal
+        torque[mask] = 0
+        
+        # Step 2: Compare adjacent values, set larger absolute value to 0 if difference > 400
+        for i in range(1, len(torque)):
+            # Skip if either current or previous value is already 0 (from step 1)
+            if torque[i-1] == 0 or torque[i] == 0:
+                continue
                 
-                if diff <= 400:
-                    # Difference is acceptable, keep this value
-                    indices_to_keep.append(i)
+            diff = abs(torque[i] - torque[i-1])
+            if diff > task_diff:
+                # Set the one with larger absolute value to 0
+                if abs(torque[i]) > abs(torque[i-1]):
+                    torque[i] = 0
                 else:
-                    # Difference is too large, keep the one with smaller absolute value
-                    if abs(torque[i]) < abs(torque[prev_idx]):
-                        # Remove the previous value and add current one
-                        indices_to_keep[-1] = i
-                    # If current value has larger absolute value, simply don't add it
+                    torque[i-1] = 0
         
-        # Apply the filtering
-        indices_to_keep = np.array(indices_to_keep)
-        t = t[indices_to_keep]
-        torque = torque[indices_to_keep]
+        # Step 3: Fill gaps between non-zero values
+        i = 0
+        while i < len(torque):
+            # Find next non-zero value A
+            if torque[i] != 0:
+                A = torque[i]
+                ai = i
+                
+                # Search for next non-zero value B within next 20 values
+                found_B = False
+                for j in range(ai + 1, min(ai + 21, len(torque))):
+                    if torque[j] != 0:
+                        # Found non-zero value B
+                        bi = j
+                        # Fill values from ai+1 to bi-1 with A
+                        for k in range(ai + 1, bi):
+                            torque[k] = A
+                        
+                        # B becomes the new A, continue from B
+                        i = bi
+                        found_B = True
+                        break
+                
+                if not found_B:
+                    # No non-zero value found within 20 values, abandon current A
+                    i = ai + 1
+            else:
+                i += 1
+        
+
 
         plt.plot(t, torque)
         plt.ylabel("Torque $(N\cdot m)$", fontsize=label_size)

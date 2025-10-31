@@ -1,3 +1,5 @@
+# due to the semaphore, the 5th servo's torque and angle data are both mixed,
+# this script is used to filter the torque data and angle data
 import pandas as pd
 import numpy as np
 import scienceplots
@@ -30,7 +32,7 @@ def quat2euler(qw, qx, qy, qz):
     return roll, pitch, yaw
 
 
-def main(file_path, type, t_ref_start, t_ref_end):
+def main(file_path, type, t_ref_start, t_ref_end, task):
     # Load the data from csv file
     data = pd.read_csv(file_path)
 
@@ -146,10 +148,11 @@ def main(file_path, type, t_ref_start, t_ref_end):
     data_extendable_links_len = data[
         [
             "__time",
-            "/beetle1/joint_states/extendable_joint1/position",
-            "/beetle1/joint_states/extendable_joint2/position",
-            "/beetle1/joint_states/extendable_joint3/position",
-            "/beetle1/joint_states/extendable_joint4/position",
+            # "/beetle1/joint_states/extendable_joint1/position",
+            # "/beetle1/joint_states/extendable_joint2/position",
+            # "/beetle1/joint_states/extendable_joint3/position",
+            # "/beetle1/joint_states/extendable_joint4/position",
+            "/beetle1/servo/states/servos[4]/load",
         ]
     ]
     data_extendable_links_len = data_extendable_links_len.dropna()
@@ -175,7 +178,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.style.use(["science", "grid"])
 
         plt.rcParams.update({"font.size": 11})  # default is 10
-        label_size = 14
+        label_size = 12
 
         fig = plt.figure(figsize=(7, 7))
 
@@ -345,19 +348,24 @@ def main(file_path, type, t_ref_start, t_ref_end):
         # Subplot (5,1): Extendable joint lengths
         plt.subplot(5, 2, 9)
         t = np.array(data_extendable_links_len["__time"]) - t_bias
-        joint1 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint1/position"])
+        extend_rate = 0.2/(8720+4620)
+        joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"]))
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint2/position"])
+        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"]))
         plt.plot(t, joint2, label="$a_2$")
-        joint3 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint3/position"])
+        joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")
-        joint4 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint4/position"])
-        # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        joint4 = joint2
         plt.plot(t, joint4, label="$a_4$")
+        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
         plt.ylabel("Rotor pos(m)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
+        joint1_df = pd.DataFrame({
+            'time': t,
+            'position':  np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"])
+        })
+        joint1_df.to_csv('filtered_joint1.csv', index=False)
 
         # --------------------------------
         # Subplot (5,2): Extend torque
@@ -370,62 +378,92 @@ def main(file_path, type, t_ref_start, t_ref_end):
         torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/angle"])
         
         # remove servo value
-        # # --------------------valve
-        # task_nominal = 150
-        # task_diff = 250
-        # --------------------grasp
-        task_nominal = 200
-        task_diff = 200
+        if task == 'valve':
+            task_nominal = 150
+            task_diff = 150
+        else:  # grasp task
+            task_nominal = 130
+            task_diff = 130
         mask = np.abs(torque) > task_nominal
         torque[mask] = 0
         
         # Step 2: Compare adjacent values, set larger absolute value to 0 if difference > 400
-        for i in range(1, len(torque)):
-            # Skip if either current or previous value is already 0 (from step 1)
-            if torque[i-1] == 0 or torque[i] == 0:
-                continue
-                
-            diff = abs(torque[i] - torque[i-1])
-            if diff > task_diff:
-                # Set the one with larger absolute value to 0
-                if abs(torque[i]) > abs(torque[i-1]):
-                    torque[i] = 0
+        def kill_big_jumps(torque, task_diff,window_len):
+            i = 0
+            while i < len(torque):
+                # When we find a non-zero value A
+                if torque[i] != 0:
+                    A = torque[i]
+                    # Check the next 15 values
+                    for j in range(i + 1, min(i + window_len, len(torque))):
+                        # If we find another non-zero value B
+                        if torque[j] != 0:
+                            B = torque[j]
+                            diff = abs(A - B)
+                            # If difference is too large, set B to zero
+                            if diff > task_diff:
+                                torque[j] = 0
+                    # Move to next position
+                    i += 1
                 else:
-                    torque[i-1] = 0
+                    i += 1
+            return torque
+        
+
+        torque = kill_big_jumps(torque, task_diff, 15)
+        torque = kill_big_jumps(torque, task_diff, 15)
+
+        if task == 'valve':
+            torque[[2188,3025,4704,4705]] = 0
+        elif task == 'grasp':
+            torque[0:1305] = 0  # Set range to zero
+            torque[[4030,4031,7667,7669]] = 0  # Set specific indices to zero
+
+        # Save torque array to CSV
+        torque_df = pd.DataFrame({
+            'time': t,
+            'torque': torque
+        })
+        torque_df.to_csv('filtered_torque.csv', index=False)
+
         
         # Step 3: Fill gaps between non-zero values
-        i = 0
-        while i < len(torque):
-            # Find next non-zero value A
-            if torque[i] != 0:
-                A = torque[i]
-                ai = i
-                
-                # Search for next non-zero value B within next 20 values
-                found_B = False
-                for j in range(ai + 1, min(ai + 21, len(torque))):
-                    if torque[j] != 0:
-                        # Found non-zero value B
-                        bi = j
-                        # Fill values from ai+1 to bi-1 with A
-                        for k in range(ai + 1, bi):
-                            torque[k] = A
-                        
-                        # B becomes the new A, continue from B
-                        i = bi
-                        found_B = True
-                        break
-                
-                if not found_B:
-                    # No non-zero value found within 20 values, abandon current A
-                    i = ai + 1
-            else:
-                i += 1
+        def fill_gaps(torque):
+            i = 0
+            while i < len(torque):
+                # Find next non-zero value A
+                if torque[i] != 0:
+                    A = torque[i]
+                    ai = i
+                    
+                    # Search for next non-zero value B within next 20 values
+                    found_B = False
+                    for j in range(ai + 1, min(ai + 21, len(torque))):
+                        if torque[j] != 0:
+                            # Found non-zero value B
+                            bi = j
+                            # Fill values from ai+1 to bi-1 with A
+                            for k in range(ai + 1, bi):
+                                torque[k] = A
+                            
+                            # B becomes the new A, continue from B
+                            i = bi
+                            found_B = True
+                            break
+                    
+                    if not found_B:
+                        # No non-zero value found within 20 values, abandon current A
+                        i = ai + 1
+                else:
+                    i += 1
+            return torque
         
+        torque = fill_gaps(torque)
+        servo_force = torque * 1e-3 *2 / 0.04
 
-
-        plt.plot(t, torque)
-        plt.ylabel("Torque $(N\cdot m)$", fontsize=label_size)
+        # plt.plot(t, torque)
+        plt.plot(t, servo_force)
+        plt.ylabel("Force $(N)$", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         # ref_traj duration shaded area
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
@@ -450,10 +488,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # grasp
-    t_ref_start = 35.0  # seconds
-    t_ref_end = 80.0  # seconds
+    # t_ref_start = 35.0  # seconds
+    # t_ref_end = 80.0  # seconds
+    # task = 'grasp'
     # valve
     t_ref_start = 5.0  # seconds
     t_ref_end = 35.0  # seconds
-
-    main(args.file_path, args.type, t_ref_start, t_ref_end)
+    task = 'valve'
+    main(args.file_path, args.type, t_ref_start, t_ref_end, task)

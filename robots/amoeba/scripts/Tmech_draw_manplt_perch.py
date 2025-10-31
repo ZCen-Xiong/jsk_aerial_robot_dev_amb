@@ -275,8 +275,9 @@ def main(file_path, type, t_ref_start, t_ref_end):
 
         # --------------------------------
         plt.subplot(5, 2, 6)
+        yaw_rate = 1.461
         t_ref = np.array(data_euler_ref["__time"]) - t_bias
-        yaw_ref = np.array(data_euler_ref["yaw"])
+        yaw_ref = np.array(data_euler_ref["yaw"])*yaw_rate
         # if yaw_ref has a jump, we need to fix it
         for i in range(1, len(yaw_ref)):
             if yaw_ref[i] - yaw_ref[i - 1] > np.pi:
@@ -286,7 +287,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t_ref, yaw_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
 
         t = np.array(data_euler["__time"]) - t_bias
-        yaw = np.array(data_euler["yaw"])
+        yaw = np.array(data_euler["yaw"])*yaw_rate
         # if yaw has a jump, we need to fix it
         for i in range(1, len(yaw)):
             if yaw[i] - yaw[i - 1] > np.pi:
@@ -304,15 +305,25 @@ def main(file_path, type, t_ref_start, t_ref_end):
         print(f"RMSE Yaw (deg): {rmse_yaw * 180 / np.pi}")
 
         # --------------------------------
+        poweroff_index = 4965
         plt.subplot(5, 2, 7)
+        def change_to_N(array, start_index, desire_value):
+            """Change the array values from start_index to the end to desire_value"""
+            array_changed = array.copy()
+            array_changed[start_index:] = desire_value
+            return array_changed
         t = np.array(data_thrust_cmd["__time"]) - t_bias
         thrust1 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[0]"])
+        thrust1 = change_to_N(thrust1, poweroff_index, 0)
         plt.plot(t, thrust1, label="$f_{c1}$")
         thrust2 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[1]"])
+        thrust2 = change_to_N(thrust2, poweroff_index, 0)
         plt.plot(t, thrust2, label="$f_{c2}$")
         thrust3 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[2]"])
+        thrust3 = change_to_N(thrust3, poweroff_index, 0)
         plt.plot(t, thrust3, label="$f_{c3}$")
         thrust4 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[3]"])
+        thrust4 = change_to_N(thrust4, poweroff_index, 0)
         plt.plot(t, thrust4, label="$f_{c4}$")
         plt.ylabel("Thrust Cmd (N)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
@@ -324,12 +335,16 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.subplot(5, 2, 8)
         t = np.array(data_servo_angle_cmd["__time"]) - t_bias
         servo1 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal1/position"]) * 180 / np.pi
+        servo1 = change_to_N(servo1, poweroff_index, 0)
         plt.plot(t, servo1, label="$\\alpha_{c1}$")
         servo2 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal2/position"]) * 180 / np.pi
+        servo2 = change_to_N(servo2, poweroff_index, 0)
         plt.plot(t, servo2, label="$\\alpha_{c2}$")
         servo3 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal3/position"]) * 180 / np.pi
+        servo3 = change_to_N(servo3, poweroff_index, 0)
         plt.plot(t, servo3, label="$\\alpha_{c3}$")
         servo4 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal4/position"]) * 180 / np.pi
+        servo4 = change_to_N(servo4, poweroff_index, 0)
         plt.plot(t, servo4, label="$\\alpha_{c4}$")
         # ref_traj duration shaded area
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
@@ -391,9 +406,6 @@ if __name__ == "__main__":
 
     # grasp
     t_ref_start = 35.0  # seconds
-    t_ref_end = 80.0  # seconds
-    # valve
-    t_ref_start = 5.0  # seconds
-    t_ref_end = 35.0  # seconds
+    t_ref_end = 40  # seconds
 
     main(args.file_path, args.type, t_ref_start, t_ref_end)

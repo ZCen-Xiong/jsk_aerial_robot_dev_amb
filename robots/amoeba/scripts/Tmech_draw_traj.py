@@ -342,16 +342,16 @@ def main(file_path, type):
         # Subplot (5,1): Extendable joint lengths
         plt.subplot(5, 2, 9)
         t = np.array(data_extendable_links_len["__time"]) - t_bias
-        joint1 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint1/position"])
+        extend_rate = 0.2/(8720+4620)
+        joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint2/position"])
+        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
         plt.plot(t, joint2, label="$a_2$")
-        joint3 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint3/position"])
+        joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")
-        joint4 = 0.2 + np.array(data_extendable_links_len["/beetle1/joint_states/extendable_joint4/position"])
-        # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        joint4 = joint2
         plt.plot(t, joint4, label="$a_4$")
+        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
         plt.ylabel("Rotor pos(m)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")

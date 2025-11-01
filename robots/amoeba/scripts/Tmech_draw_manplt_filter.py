@@ -183,6 +183,7 @@ def main(file_path, type, t_ref_start, t_ref_end, task):
         fig = plt.figure(figsize=(7, 7))
 
         t_bias = data_xyz["__time"].iloc[0]  # Start from actual data time
+        print(f"t_bias: {t_bias}")
         color_ref = "#0C5DA5"
         color_real = "#FF2C00"
 

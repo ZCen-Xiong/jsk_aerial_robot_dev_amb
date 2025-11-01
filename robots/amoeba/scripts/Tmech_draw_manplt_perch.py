@@ -305,26 +305,32 @@ def main(file_path, type, t_ref_start, t_ref_end):
         print(f"RMSE Yaw (deg): {rmse_yaw * 180 / np.pi}")
 
         # --------------------------------
-        poweroff_index = 4965
+        poweroff_index = 4675
+        thrust_off_index = 4393
+        def change_to_N(array, start_index, period, desire_value):
+            # smooth transition to desire_value over period
+            for i in range(start_index, start_index+period):
+                array[i] = array[start_index-1] + (desire_value - array[start_index-1]) * (i - start_index + 1) / period
+            array[start_index+period:] = desire_value
+            return array
+        
         plt.subplot(5, 2, 7)
-        def change_to_N(array, start_index, desire_value):
-            """Change the array values from start_index to the end to desire_value"""
-            array_changed = array.copy()
-            array_changed[start_index:] = desire_value
-            return array_changed
         t = np.array(data_thrust_cmd["__time"]) - t_bias
+
         thrust1 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[0]"])
-        thrust1 = change_to_N(thrust1, poweroff_index, 0)
+        thrust1 = change_to_N(thrust1, thrust_off_index, 0, 0)
         plt.plot(t, thrust1, label="$f_{c1}$")
         thrust2 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[1]"])
-        thrust2 = change_to_N(thrust2, poweroff_index, 0)
+        thrust2 = change_to_N(thrust2, thrust_off_index, 0, 0)
         plt.plot(t, thrust2, label="$f_{c2}$")
         thrust3 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[2]"])
-        thrust3 = change_to_N(thrust3, poweroff_index, 0)
+        thrust3 = change_to_N(thrust3, thrust_off_index, 0, 0)
         plt.plot(t, thrust3, label="$f_{c3}$")
         thrust4 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[3]"])
-        thrust4 = change_to_N(thrust4, poweroff_index, 0)
-        plt.plot(t, thrust4, label="$f_{c4}$")
+        thrust4 = change_to_N(thrust4, thrust_off_index, 0, 0)
+        t4 = np.concatenate([[0, 2.84], t])
+        thrust4 = np.concatenate([[0,0], thrust4])
+        plt.plot(t4, thrust4, label="$f_{c4}$")
         plt.ylabel("Thrust Cmd (N)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
@@ -333,18 +339,28 @@ def main(file_path, type, t_ref_start, t_ref_end):
 
         # --------------------------------
         plt.subplot(5, 2, 8)
+        servo_off_index = 4396
         t = np.array(data_servo_angle_cmd["__time"]) - t_bias
         servo1 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal1/position"]) * 180 / np.pi
-        servo1 = change_to_N(servo1, poweroff_index, 0)
+        servo1 = change_to_N(servo1, servo_off_index,0, 0)
+
+        # Save torque array to CSV
+        servo_df = pd.DataFrame({
+            'time': t,
+            'torque': servo1
+        })
+        servo_df.to_csv('filtered_servo.csv', index=False)
+
+
         plt.plot(t, servo1, label="$\\alpha_{c1}$")
         servo2 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal2/position"]) * 180 / np.pi
-        servo2 = change_to_N(servo2, poweroff_index, 0)
+        servo2 = change_to_N(servo2, servo_off_index,0, 0)
         plt.plot(t, servo2, label="$\\alpha_{c2}$")
         servo3 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal3/position"]) * 180 / np.pi
-        servo3 = change_to_N(servo3, poweroff_index, 0)
+        servo3 = change_to_N(servo3, servo_off_index, 0, 0)
         plt.plot(t, servo3, label="$\\alpha_{c3}$")
         servo4 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal4/position"]) * 180 / np.pi
-        servo4 = change_to_N(servo4, poweroff_index, 0)
+        servo4 = change_to_N(servo4, servo_off_index, 0, 0)
         plt.plot(t, servo4, label="$\\alpha_{c4}$")
         # ref_traj duration shaded area
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
@@ -359,8 +375,9 @@ def main(file_path, type, t_ref_start, t_ref_end):
         t = np.array(data_extendable_links_len["__time"]) - t_bias
         extend_rate = 0.2/(8720+4620)
         joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint1 = change_to_N(joint1, poweroff_index, 10, 0.2043)
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint2 = 0.4 - joint1
         plt.plot(t, joint2, label="$a_2$")
         joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")
@@ -376,7 +393,15 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.subplot(5, 2, 10)
         t = np.array(data_extend_torque["__time"]) - t_bias
         torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/load"])
-        servo_force = torque * 1e-3 * 2 / 0.04
+        # Save torque array to CSV
+        torque = change_to_N(torque, poweroff_index + 20, 50, 702)
+        torque_df = pd.DataFrame({
+            'time': t,
+            'torque': torque
+        })
+        torque_df.to_csv('filtered_torque.csv', index=False)
+
+        servo_force = torque * 1e-3 * 2 / 0.032 
 
         # plt.plot(t, torque)
         plt.plot(t, servo_force)
@@ -404,8 +429,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # grasp
+    # perch
     t_ref_start = 35.0  # seconds
-    t_ref_end = 40  # seconds
+    t_ref_end = 46.95  # seconds
 
     main(args.file_path, args.type, t_ref_start, t_ref_end)

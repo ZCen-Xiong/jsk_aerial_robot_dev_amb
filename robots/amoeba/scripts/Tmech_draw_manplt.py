@@ -389,11 +389,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # grasp
-    t_ref_start = 35.0  # seconds
-    t_ref_end = 80.0  # seconds
-    # valve
-    t_ref_start = 5.0  # seconds
-    t_ref_end = 35.0  # seconds
+    # corridor
+    t_ref_start = 20  # seconds
+    t_ref_end = 65.0  # seconds
 
     main(args.file_path, args.type, t_ref_start, t_ref_end)

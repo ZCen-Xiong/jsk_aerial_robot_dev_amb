@@ -343,9 +343,9 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.subplot(5, 2, 9)
         t = np.array(data_extendable_links_len["__time"]) - t_bias
         extend_rate = 0.2/(8720+4620)
-        joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint1 = 0.3 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint2 = 0.6 - joint1
         plt.plot(t, joint2, label="$a_2$")
         joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")

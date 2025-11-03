@@ -350,9 +350,9 @@ def main(file_path, type, t_ref_start, t_ref_end, task):
         plt.subplot(5, 2, 9)
         t = np.array(data_extendable_links_len["__time"]) - t_bias
         extend_rate = 0.2/(8720+4620)
-        joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"]))
+        joint1 = 0.3 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"]))
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/load"]))
+        joint2 = 0.6 - joint1
         plt.plot(t, joint2, label="$a_2$")
         joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")
@@ -489,11 +489,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # grasp
-    # t_ref_start = 35.0  # seconds
-    # t_ref_end = 80.0  # seconds
-    # task = 'grasp'
+    t_ref_start = 35.0  # seconds
+    t_ref_end = 80.0  # seconds
+    task = 'grasp'
     # valve
-    t_ref_start = 5.0  # seconds
-    t_ref_end = 35.0  # seconds
-    task = 'valve'
+    # t_ref_start = 5.0  # seconds
+    # t_ref_end = 35.0  # seconds
+    # task = 'valve'
     main(args.file_path, args.type, t_ref_start, t_ref_end, task)

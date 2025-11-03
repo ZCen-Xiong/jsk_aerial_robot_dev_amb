@@ -144,10 +144,7 @@ def main(file_path, type):
     data_extendable_links_len = data[
         [
             "__time",
-            "/beetle1/joint_states/extendable_joint1/position",
-            "/beetle1/joint_states/extendable_joint2/position",
-            "/beetle1/joint_states/extendable_joint3/position",
-            "/beetle1/joint_states/extendable_joint4/position",
+            "/beetle1/servo/states/servos[4]/angle"
         ]
     ]
     data_extendable_links_len = data_extendable_links_len.dropna()
@@ -343,9 +340,9 @@ def main(file_path, type):
         plt.subplot(5, 2, 9)
         t = np.array(data_extendable_links_len["__time"]) - t_bias
         extend_rate = 0.2/(8720+4620)
-        joint1 = 0.2 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint1 = 0.3 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
         plt.plot(t, joint1, label="$a_1$")
-        joint2 = 0.2 - extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
+        joint2 = 0.6 - joint1
         plt.plot(t, joint2, label="$a_2$")
         joint3 = joint1
         plt.plot(t, joint3, label="$a_3$")
@@ -354,6 +351,8 @@ def main(file_path, type):
         plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
         plt.ylabel("Rotor pos(m)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
+        # y_size = 0.001
+        # plt.ylim(0.3-y_size, 0.3+y_size)  # Set y-axis limits from 0.299 to 0.301
         plt.legend(framealpha=legend_alpha, loc="upper left")
 
         # --------------------------------

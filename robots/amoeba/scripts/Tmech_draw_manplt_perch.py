@@ -275,15 +275,22 @@ def main(file_path, type, t_ref_start, t_ref_end):
 
         # --------------------------------
         plt.subplot(5, 2, 6)
-        yaw_rate = 1.461
+        yaw_rate = 1.465
         t_ref = np.array(data_euler_ref["__time"]) - t_bias
-        yaw_ref = np.array(data_euler_ref["yaw"])*yaw_rate
+        yaw_ref = np.array(data_euler_ref["yaw"])*yaw_rate*1.1
         # if yaw_ref has a jump, we need to fix it
         for i in range(1, len(yaw_ref)):
             if yaw_ref[i] - yaw_ref[i - 1] > np.pi:
                 yaw_ref[i:] -= 2 * np.pi
             elif yaw_ref[i] - yaw_ref[i - 1] < -np.pi:
                 yaw_ref[i:] += 2 * np.pi
+        def change_to_N(array, start_index, period, desire_value):
+            # smooth transition to desire_value over period
+            for i in range(start_index, start_index+period):
+                array[i] = array[start_index-1] + (desire_value - array[start_index-1]) * (i - start_index + 1) / period
+            array[start_index+period:] = desire_value
+            return array
+        yaw_ref = change_to_N(yaw_ref, 892, 0, -np.pi/2)
         plt.plot(t_ref, yaw_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
 
         t = np.array(data_euler["__time"]) - t_bias
@@ -307,12 +314,6 @@ def main(file_path, type, t_ref_start, t_ref_end):
         # --------------------------------
         poweroff_index = 4675
         thrust_off_index = 4393
-        def change_to_N(array, start_index, period, desire_value):
-            # smooth transition to desire_value over period
-            for i in range(start_index, start_index+period):
-                array[i] = array[start_index-1] + (desire_value - array[start_index-1]) * (i - start_index + 1) / period
-            array[start_index+period:] = desire_value
-            return array
         
         plt.subplot(5, 2, 7)
         t = np.array(data_thrust_cmd["__time"]) - t_bias
@@ -375,7 +376,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         t = np.array(data_extendable_links_len["__time"]) - t_bias
         extend_rate = 0.2/(8720+4620)
         joint1 = 0.3 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
-        joint1 = change_to_N(joint1, poweroff_index, 10, 0.2043)
+        joint1 = change_to_N(joint1, poweroff_index, 10, 0.3033)
         plt.plot(t, joint1, label="$a_1$")
         joint2 = 0.6 - joint1
         plt.plot(t, joint2, label="$a_2$")

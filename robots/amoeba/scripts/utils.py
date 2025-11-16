@@ -24,12 +24,14 @@ def unwrap_angle_sequence(angle_seq: np.ndarray) -> np.ndarray:
 
 
 def calculate_rmse(t, x, t_ref, x_ref, is_yaw=False):
-    x_ref_interp = np.interp(t, t_ref, x_ref)
+    # cut mocap x to ref period
+    x_interp = np.interp(t_ref, t, x)
+    
     if is_yaw:
-        # calculate the RMSE for yaw
-        error = np.minimum(np.abs(x - x_ref_interp), 2 * np.pi - np.abs(x - x_ref_interp))
+        # calculate the RMSE for yaw with angle wrapping
+        error = np.minimum(np.abs(x_interp - x_ref), 2 * np.pi - np.abs(x_interp - x_ref))
     else:
-        error = x - x_ref_interp
+        error = x_interp - x_ref
 
     rmse_x = np.sqrt(np.mean(error**2))
     return rmse_x

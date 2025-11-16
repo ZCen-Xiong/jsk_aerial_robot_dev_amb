@@ -1,22 +1,13 @@
+# this file has been hardcoded, use after check
 import pandas as pd
 import numpy as np
 import scienceplots
 import matplotlib.pyplot as plt
+from utils import calculate_rmse
 import argparse
 
 legend_alpha = 0.5
 
-
-def calculate_rmse(t, x, t_ref, x_ref, is_yaw=False):
-    x_ref_interp = np.interp(t, t_ref, x_ref)
-    if is_yaw:
-        # calculate the RMSE for yaw
-        error = np.minimum(np.abs(x - x_ref_interp), 2 * np.pi - np.abs(x - x_ref_interp))
-    else:
-        error = x - x_ref_interp
-
-    rmse_x = np.sqrt(np.mean(error**2))
-    return rmse_x
 
 def quat2euler(qw, qx, qy, qz):
     roll = np.arctan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx**2 + qy**2))
@@ -143,7 +134,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         time_shift = t_ref_start_epoch - global_t_bias  # Positive if this file starts later
         t_bias = t_ref_start_epoch  # Use this file's own ref start as local bias
     
-    color_ref = "#0C5DA5"
+    color_ref = "#05233D"
     label_size = 14
 
     # -------------------------------- X Position
@@ -158,7 +149,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         # ref_traj duration shaded area (only plot once)
         t_ref_start = t_ref[0]
         t_ref_end = t_ref[-1]
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     # Shift trajectory data by the same amount
     t_traj_times = np.array(data_xyz["__time"])
@@ -184,7 +175,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         t_ref = np.array(data_euler_ref["__time"]) - t_bias + time_shift
         roll_ref = np.array(data_euler_ref["roll"])
         plt.plot(t_ref, roll_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     t = np.array(data_euler["__time"]) - t_bias + time_shift
     roll = np.array(data_euler["roll"])
@@ -206,7 +197,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         t_ref = np.array(data_xyz_ref["__time"]) - t_bias + time_shift
         y_ref = np.array(data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y"])
         plt.plot(t_ref, y_ref, label="ref", linestyle="--", color=color_ref)
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     t = np.array(data_xyz["__time"]) - t_bias + time_shift
     y = np.array(data_xyz["/beetle1/uav/cog/odom/pose/pose/position/y"])
@@ -227,7 +218,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         t_ref = np.array(data_euler_ref["__time"]) - t_bias + time_shift
         pitch_ref = np.array(data_euler_ref["pitch"])
         plt.plot(t_ref, pitch_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     t = np.array(data_euler["__time"]) - t_bias + time_shift
     pitch = np.array(data_euler["pitch"])
@@ -249,7 +240,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         t_ref = np.array(data_xyz_ref["__time"]) - t_bias + time_shift
         z_ref = np.array(data_xyz_ref["/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z"])
         plt.plot(t_ref, z_ref, label="ref", linestyle="--", color=color_ref)
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     t = np.array(data_xyz["__time"]) - t_bias + time_shift
     z = np.array(data_xyz["/beetle1/uav/cog/odom/pose/pose/position/z"])
@@ -276,7 +267,7 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
             elif yaw_ref[i] - yaw_ref[i - 1] < -np.pi:
                 yaw_ref[i:] += 2 * np.pi
         plt.plot(t_ref, yaw_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        # plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
 
     t = np.array(data_euler["__time"]) - t_bias + time_shift
     yaw = np.array(data_euler["yaw"])
@@ -297,10 +288,11 @@ def plot_trajectory_on_figure(fig, processed_data, color, label_suffix="", plot_
         print(f"RMSE Yaw{label_suffix} (rad): {rmse_yaw}")
         print(f"RMSE Yaw{label_suffix} (deg): {rmse_yaw * 180 / np.pi}")
 
-    # Add legends to all subplots
+    # Add legends and x-axis limits to all subplots
     for i in range(1, 7):
         plt.subplot(3, 2, i)
         plt.legend(framealpha=legend_alpha)
+        plt.xlim(left=-5)  # Set x-axis to start from 0
 
 def main(file_paths, type_plot):
     """Main function to plot multiple CSV files"""
@@ -311,7 +303,7 @@ def main(file_paths, type_plot):
         fig = plt.figure(figsize=(7, 7))
         
         # Define colors for different files
-        colors = ["#FF2C00", "#00C851", "#FF6900", "#7B68EE", "#DC143C"]
+        colors = ["#FF0000D1","#0D16C6", "#0DD10DD1", "#FF8C00D1", "#DC143C"]
         
         # Process and plot each file
         global_t_bias = None  # Will be set from first file's reference start
@@ -324,6 +316,9 @@ def main(file_paths, type_plot):
             
             # Set global time bias from first file's reference start
             global_t_bias = processed_data['xyz_ref']["__time"].iloc[0]
+            #  only for lemni_75 real, cuz i wrongly set a fixed pos for 8.03 seconds in real experiment
+            if i ==1:
+                global_t_bias = global_t_bias + 8.030
             print(f"Global time bias set to: {global_t_bias}")
             # Plot on the same figure
             color = colors[i % len(colors)]

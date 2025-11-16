@@ -6,18 +6,7 @@ import argparse
 
 legend_alpha = 0.5
 
-
-def calculate_rmse(t, x, t_ref, x_ref, is_yaw=False):
-    x_ref_interp = np.interp(t, t_ref, x_ref)
-    if is_yaw:
-        # calculate the RMSE for yaw
-        error = np.minimum(np.abs(x - x_ref_interp), 2 * np.pi - np.abs(x - x_ref_interp))
-    else:
-        error = x - x_ref_interp
-
-    rmse_x = np.sqrt(np.mean(error**2))
-    return rmse_x
-
+from utils import calculate_rmse
 
 def quat2euler(qw, qx, qy, qz):
     roll = np.arctan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx**2 + qy**2))

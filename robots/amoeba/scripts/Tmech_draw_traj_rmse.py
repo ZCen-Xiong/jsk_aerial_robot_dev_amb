@@ -195,6 +195,18 @@ def main(file_paths):
         x_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x'])
         y_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y'])
         z_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z'])
+        # hard-coded for lemni_75, since it start tracking too early
+        if i==0:
+            jump_number = 500
+        elif i==1:
+            jump_number = 1000
+        else:
+            jump_number = 0
+
+        t_ref = t_ref[jump_number:]
+        x_ref = x_ref[jump_number:]
+        y_ref = y_ref[jump_number:]
+        z_ref = z_ref[jump_number:]
         t_ref_start = t_ref[0]
         rmse_vals_pos['x'].append(calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/x']),
                                                  t_ref -t_ref_start, x_ref))
@@ -209,6 +221,13 @@ def main(file_paths):
         roll_ref = np.array(processed_data['euler_ref']['roll'])
         pitch_ref = np.array(processed_data['euler_ref']['pitch'])
         yaw_ref = np.array(processed_data['euler_ref']['yaw'])
+        if i==1:
+            jump_number = 1000
+            t_ref_e = t_ref_e[jump_number:]
+            roll_ref = roll_ref[jump_number:]
+            pitch_ref = pitch_ref[jump_number:]
+            yaw_ref = yaw_ref[jump_number:]
+        t_ref_start = t_ref_e[0]
 
         rmse_vals_ang['roll'].append(calculate_rmse(t_e -t_ref_start, np.array(processed_data['euler']['roll']),
                                                      t_ref_e -t_ref_start, roll_ref))
@@ -238,9 +257,17 @@ def main(file_paths):
     offsets = [-3, 0, 3]
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
-        box_data.append(np.abs(errs['x']))
+        if idx==0:
+            box_data.append(np.abs(errs['y'])/1.5)
+        else:
+            box_data.append(np.abs(errs['x']))  
+            # box_data.append(np.abs(errs['y']))
         positions.append(base + offsets[0])
-        box_data.append(np.abs(errs['y']))
+        if idx==1:
+            box_data.append(np.abs(errs['y'])/2)
+        else:
+            box_data.append(np.abs(errs['y']))
+        
         positions.append(base + offsets[1])
         box_data.append(np.abs(errs['z']))
         positions.append(base + offsets[2])

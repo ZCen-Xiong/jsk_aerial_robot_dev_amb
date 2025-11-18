@@ -128,13 +128,13 @@ def compute_error_series(processed_data):
     t = np.array(data_xyz['__time'])
     t_ref = np.array(data_xyz_ref['__time'])
 
-    x = np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/x'])
-    y = np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/y'])
-    z = np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/z'])
+    x = np.interp(t_ref, t, np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/x']))
+    y = np.interp(t_ref, t, np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/y']))
+    z = np.interp(t_ref, t, np.array(data_xyz['/beetle1/uav/cog/odom/pose/pose/position/z']))
 
-    x_ref = np.interp(t, t_ref, np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x']))
-    y_ref = np.interp(t, t_ref, np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y']))
-    z_ref = np.interp(t, t_ref, np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z']))
+    x_ref = np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x'])
+    y_ref = np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y'])
+    z_ref = np.array(data_xyz_ref['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z'])
 
     err_x = x - x_ref
     err_y = y - y_ref
@@ -143,12 +143,12 @@ def compute_error_series(processed_data):
     # euler
     t_e = np.array(data_euler['__time'])
     t_ref_e = np.array(data_euler_ref['__time'])
-    roll = np.array(data_euler['roll'])
-    pitch = np.array(data_euler['pitch'])
-    yaw = np.array(data_euler['yaw'])
-    roll_ref = np.interp(t_e, t_ref_e, np.array(data_euler_ref['roll']))
-    pitch_ref = np.interp(t_e, t_ref_e, np.array(data_euler_ref['pitch']))
-    yaw_ref = np.interp(t_e, t_ref_e, np.array(data_euler_ref['yaw']))
+    roll  = np.interp(t_ref_e, t_e, np.array(data_euler['roll']))
+    pitch = np.interp(t_ref_e, t_e, np.array(data_euler['pitch']))
+    yaw   = np.interp(t_ref_e, t_e, np.array(data_euler['yaw']))
+    roll_ref  =  np.array(data_euler_ref['roll'])
+    pitch_ref =  np.array(data_euler_ref['pitch'])
+    yaw_ref   =  np.array(data_euler_ref['yaw'])
 
     # handle yaw wrapping for both series (make diff minimal)
     yaw_diff = yaw - yaw_ref
@@ -197,6 +197,7 @@ def main(file_paths):
         z_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z'])
         # hard-coded for lemni_75, since it start tracking too early
         print(f'len{i} of t_ref before jump: {len(t_ref)}')
+        pd.DataFrame({'y_ref': y_ref}).to_csv('y_error_ext75.csv', index=False)
         if i==0:
             jump_number = 500
         elif i==1:
@@ -258,19 +259,22 @@ def main(file_paths):
     offsets = [-3, 0, 3]
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
-        if idx==0:
-            box_data.append(np.abs(errs['x'])/1.5)
-        else:
-            box_data.append(np.abs(errs['x']))  
-            # box_data.append(np.abs(errs['y']))
-        positions.append(base + offsets[0])
+        # if idx==0:
+            # box_data.append(np.abs(errs['x'][500:]))
+        # else:
+            # box_data.append(np.abs(errs['x']))
+        
+        box_data.append(np.abs(errs['x']))
+
+        positions.append(base + offsets[0])        
         if idx==1:
-            box_data.append(np.abs(errs['y'])/2)
+            box_data.append(np.abs(errs['y'][1000:]))
             # Save this specific y-error value to CSV
             pd.DataFrame({'y_error': errs['y']}).to_csv('y_error_ext75.csv', index=False)
             print(f"Saved y-error for extension 75mm to: y_error_ext75.csv")
         else:
             box_data.append(np.abs(errs['y']))
+        # box_data.append(np.abs(errs['y']))
         
         positions.append(base + offsets[1])
         box_data.append(np.abs(errs['z']))

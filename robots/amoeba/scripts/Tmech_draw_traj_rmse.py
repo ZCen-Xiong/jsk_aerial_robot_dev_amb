@@ -196,6 +196,7 @@ def main(file_paths):
         y_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y'])
         z_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z'])
         # hard-coded for lemni_75, since it start tracking too early
+        print(f'len{i} of t_ref before jump: {len(t_ref)}')
         if i==0:
             jump_number = 500
         elif i==1:
@@ -258,13 +259,16 @@ def main(file_paths):
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
         if idx==0:
-            box_data.append(np.abs(errs['y'])/1.5)
+            box_data.append(np.abs(errs['x'])/1.5)
         else:
             box_data.append(np.abs(errs['x']))  
             # box_data.append(np.abs(errs['y']))
         positions.append(base + offsets[0])
         if idx==1:
             box_data.append(np.abs(errs['y'])/2)
+            # Save this specific y-error value to CSV
+            pd.DataFrame({'y_error': errs['y']}).to_csv('y_error_ext75.csv', index=False)
+            print(f"Saved y-error for extension 75mm to: y_error_ext75.csv")
         else:
             box_data.append(np.abs(errs['y']))
         

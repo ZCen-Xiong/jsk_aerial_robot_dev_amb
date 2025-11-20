@@ -231,7 +231,7 @@ def main(file_paths):
         pitch_ref = np.array(processed_data['euler_ref']['pitch'])
         yaw_ref = np.array(processed_data['euler_ref']['yaw'])
         if i==1:
-            jump_number = 1200
+            jump_number = 1000
             t_ref_e = t_ref_e[jump_number:]
             roll_ref = roll_ref[jump_number:]
             pitch_ref = pitch_ref[jump_number:]
@@ -306,7 +306,7 @@ def main(file_paths):
     for i, patch in enumerate(bp['boxes']):
         patch.set(facecolor=colors_box[i % 3], alpha=0.6)
 
-    ax1.set_xlabel('Longest Arm Length', fontsize=12)
+    ax1.set_xlabel('Max Arm Length (m)', fontsize=12)
     ax1.set_xticks(extensions)
     ax1.set_xticklabels(['0.3', '0.35', '0.4'])  
     ax1.set_ylabel('Position error (m)', fontsize=12)
@@ -341,7 +341,7 @@ def main(file_paths):
     for i, patch in enumerate(bp2['boxes']):
         patch.set(facecolor=colors_box[i % 3], alpha=0.6)
 
-    ax2.set_xlabel('Longest Arm Length (m)', fontsize=12)
+    ax2.set_xlabel('Max Arm Length (m)', fontsize=12)
     ax2.set_xticks(extensions)
     ax2.set_xticklabels(['0.3', '0.35', '0.4'])  # Custom tick labels
     ax2.set_ylabel('Angle error (deg)', fontsize=12)

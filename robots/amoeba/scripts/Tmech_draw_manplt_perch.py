@@ -19,7 +19,7 @@ def quat2euler(qw, qx, qy, qz):
     return roll, pitch, yaw
 
 
-def main(file_path, type, t_ref_start, t_ref_end):
+def main(file_path, type, t_ref_ranges):
     # Load the data from csv file
     data = pd.read_csv(file_path)
 
@@ -184,8 +184,10 @@ def main(file_path, type, t_ref_start, t_ref_end):
         # t_ref_start = t_ref[0]
         # t_ref_end = t_ref[-1]
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
-
+        def draw_shaded_regions(t_ref_ranges, plt):
+            for t_start, t_end in t_ref_ranges:
+                plt.axvspan(t_start, t_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
         # calculate RMSE
         rmse_x = calculate_rmse(t, x, t_ref, x_ref)
         print(f"RMSE X (m): {rmse_x}")
@@ -200,7 +202,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         roll = np.array(data_euler["roll"])
         plt.plot(t, roll * 180 / np.pi, label="real", color=color_real)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         plt.ylabel("Roll (deg)", fontsize=label_size)
 
@@ -220,7 +222,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t, y, label="Y", color=color_real)
         plt.ylabel("Y (m)", fontsize=label_size)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # calculate RMSE
         rmse_y = calculate_rmse(t, y, t_ref, y_ref)
@@ -237,7 +239,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t, pitch * 180 / np.pi, label="real", color=color_real)
         plt.ylabel("Pitch (deg)", fontsize=label_size)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # calculate RMSE
         rmse_pitch = calculate_rmse(t, pitch, t_ref, pitch_ref)
@@ -256,7 +258,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t, z, label="Z", color=color_real)
         plt.ylabel("Z (m)", fontsize=label_size)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # calculate RMSE
         rmse_z = calculate_rmse(t, z, t_ref, z_ref)
@@ -293,7 +295,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t, yaw * 180 / np.pi, label="real", color=color_real)
         plt.ylabel("Yaw (deg)", fontsize=label_size)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # calculate RMSE
         rmse_yaw = calculate_rmse(t, yaw, t_ref, yaw_ref, is_yaw=True)
@@ -325,7 +327,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # --------------------------------
         plt.subplot(5, 2, 8)
@@ -353,7 +355,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         servo4 = change_to_N(servo4, servo_off_index, 0, 0)
         plt.plot(t, servo4, label="$\\alpha_{c4}$")
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         plt.ylabel("Servo Cmd (deg)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
@@ -373,7 +375,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.plot(t, joint3, label="$a_3$")
         joint4 = joint2
         plt.plot(t, joint4, label="$a_4$")
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
         plt.ylabel("Rotor pos(m)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
@@ -398,7 +400,7 @@ def main(file_path, type, t_ref_start, t_ref_end):
         plt.ylabel("Force $(N)$", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         # ref_traj duration shaded area
-        plt.axvspan(t_ref_start, t_ref_end, alpha=0.2, color='orange', zorder=0)
+        draw_shaded_regions(t_ref_ranges, plt)
 
         # --------------------------------
         plt.tight_layout()
@@ -420,7 +422,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # perch
-    t_ref_start = 35.0  # seconds
-    t_ref_end = 46.95  # seconds
-
-    main(args.file_path, args.type, t_ref_start, t_ref_end)
+    t_ref_ranges = [[22.0, 23.0],[26.0,27.0],[42.0, 43.0],[46.0, 47.0]]
+    main(args.file_path, args.type, t_ref_ranges)

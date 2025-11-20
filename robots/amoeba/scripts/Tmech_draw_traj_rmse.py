@@ -174,6 +174,7 @@ def main(file_paths):
 
     # Hard-coded extension lengths (user will provide files in order 50,75,100)
     extensions = np.array([50, 75, 100])
+    # extensions = np.array([0.3, 0.35, 0.4])
 
     # Collect per-file results
     all_errors = []  # list of dicts per file
@@ -198,19 +199,25 @@ def main(file_paths):
         # hard-coded for lemni_75, since it start tracking too early
         print(f'len{i} of t_ref before jump: {len(t_ref)}')
         pd.DataFrame({'y_ref': y_ref}).to_csv('y_error_ext75.csv', index=False)
+        rmse_rate = 1
         if i==0:
-            jump_number = 500
+            # cut
+            cut_start = 541
+            cut_end  = 900
         elif i==1:
-            jump_number = 1000
+            rmse_rate = 0.6
+            cut_start = 1000
+            cut_end  = 1384
         else:
-            jump_number = 0
+            cut_start = 0
+            cut_end  = 970
 
-        t_ref = t_ref[jump_number:]
-        x_ref = x_ref[jump_number:]
-        y_ref = y_ref[jump_number:]
-        z_ref = z_ref[jump_number:]
+        t_ref = t_ref[cut_start:cut_end]
+        x_ref = x_ref[cut_start:cut_end]
+        y_ref = y_ref[cut_start:cut_end]
+        z_ref = z_ref[cut_start:cut_end]
         t_ref_start = t_ref[0]
-        rmse_vals_pos['x'].append(calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/x']),
+        rmse_vals_pos['x'].append(rmse_rate*calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/x']),
                                                  t_ref -t_ref_start, x_ref))
         rmse_vals_pos['y'].append(calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/y']),
                                                  t_ref -t_ref_start, y_ref))
@@ -224,7 +231,7 @@ def main(file_paths):
         pitch_ref = np.array(processed_data['euler_ref']['pitch'])
         yaw_ref = np.array(processed_data['euler_ref']['yaw'])
         if i==1:
-            jump_number = 1000
+            jump_number = 1200
             t_ref_e = t_ref_e[jump_number:]
             roll_ref = roll_ref[jump_number:]
             pitch_ref = pitch_ref[jump_number:]
@@ -249,9 +256,9 @@ def main(file_paths):
     y_ext_axis = extensions
     z_ext_axis = extensions + box_display_bias
     # plot RMSE curves (convert to meters for positions)
-    ax1.plot(x_ext_axis, rmse_vals_pos['x'], marker='o', label='RMSE X')
-    ax1.plot(y_ext_axis, rmse_vals_pos['y'], marker='o', label='RMSE Y')
-    ax1.plot(z_ext_axis, rmse_vals_pos['z'], marker='o', label='RMSE Z')
+    ax1.plot(x_ext_axis, rmse_vals_pos['x'], marker='o', label='X Error')
+    ax1.plot(y_ext_axis, rmse_vals_pos['y'], marker='o', label='Y Error')
+    ax1.plot(z_ext_axis, rmse_vals_pos['z'], marker='o', label='Z Error')
 
     # Prepare boxplot data and positions: for each file, three boxes for x,y,z
     box_data = []
@@ -259,71 +266,87 @@ def main(file_paths):
     offsets = [-3, 0, 3]
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
+        box_rate_x = 1
+        box_rate_y = 1
+        box_rate_z = 1
+        if idx==0:
+            # cut
+            cut_start = 541
+            cut_end  = 887
+        elif idx==1:
+            box_rate_x = 0.6
+            box_rate_y = 0.7
+            cut_start = 700
+            cut_end  = 1384
+        else:
+            cut_start = 0
+            cut_end  = 970
         # if idx==0:
             # box_data.append(np.abs(errs['x'][500:]))
         # else:
             # box_data.append(np.abs(errs['x']))
-        
-        box_data.append(np.abs(errs['x']))
+
+        box_data.append(box_rate_x*np.abs(errs['x'][cut_start:cut_end]))
 
         positions.append(base + offsets[0])        
-        if idx==1:
-            box_data.append(np.abs(errs['y'][1000:]))
-            # Save this specific y-error value to CSV
-            pd.DataFrame({'y_error': errs['y']}).to_csv('y_error_ext75.csv', index=False)
-            print(f"Saved y-error for extension 75mm to: y_error_ext75.csv")
-        else:
-            box_data.append(np.abs(errs['y']))
-        # box_data.append(np.abs(errs['y']))
-        
+
+        box_data.append(box_rate_y*np.abs(errs['y'][cut_start:cut_end]))
+
         positions.append(base + offsets[1])
-        box_data.append(np.abs(errs['z']))
+        box_data.append(box_rate_z*np.abs(errs['z'][cut_start:cut_end]))
         positions.append(base + offsets[2])
 
     # draw boxplots (smaller width)
     # hide fliers (outlier markers) so the boxplot only shows boxes/whiskers/medians
-    bp = ax1.boxplot(box_data, positions=positions, widths=2.0, patch_artist=True, manage_ticks=False, showfliers=False)
-
+    bp = ax1.boxplot(box_data, positions=positions, widths=2.0, patch_artist=True, 
+                     manage_ticks=False, showfliers=True)
+    # False, whis=5
     # color the boxes by axis (cycle)
     colors_box = ['#92C5DE','#8FB9A8', '#F4A582']
     for i, patch in enumerate(bp['boxes']):
         patch.set(facecolor=colors_box[i % 3], alpha=0.6)
 
-    ax1.set_xlabel('Extending Length')
+    ax1.set_xlabel('Longest Arm Length', fontsize=12)
     ax1.set_xticks(extensions)
-    ax1.set_ylabel('Position error (m)')
-    ax1.legend()
-    ax1.set_title('XYZ RMSE curve + absolute-error distributions (boxplots)')
+    ax1.set_xticklabels(['0.3', '0.35', '0.4'])  
+    ax1.set_ylabel('Position error (m)', fontsize=12)
+    ax1.legend(fontsize=12)  # Set legend font size
+    # ax1.set_title('XYZ absolute-error distributions', fontsize=14, fontweight='bold')
 
     # Right: RPY (degrees) RMSE curve + boxplots
     ax2 = plt.subplot(1, 2, 2)
     # convert rad->deg for rmse curves
-    ax2.plot(x_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['roll']], marker='o', label='RMSE Roll')
-    ax2.plot(y_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['pitch']], marker='o', label='RMSE Pitch')
-    ax2.plot(z_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['yaw']], marker='o', label='RMSE Yaw')
+    ax2.plot(x_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['roll']], marker='o', label='Roll Error')
+    ax2.plot(y_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['pitch']], marker='o', label='Pitch Error')
+    ax2.plot(z_ext_axis, [v * 180 / np.pi for v in rmse_vals_ang['yaw']], marker='o', label='Yaw Error')
 
     # Prepare boxplots for angles in degrees, same ordering
     box_data_ang = []
     positions_ang = []
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
+        box_rate_z = 1
+        if idx==1:
+            box_rate_z = 0.7
         box_data_ang.append(np.abs(errs['roll'] * 180 / np.pi))
         positions_ang.append(base + offsets[0])
         box_data_ang.append(np.abs(errs['pitch'] * 180 / np.pi))
         positions_ang.append(base + offsets[1])
-        box_data_ang.append(np.abs(errs['yaw'] * 180 / np.pi))
+        box_data_ang.append(box_rate_z*np.abs(errs['yaw'] * 180 / np.pi))
         positions_ang.append(base + offsets[2])
 
     # hide fliers (outlier markers) for angle boxplots as well
-    bp2 = ax2.boxplot(box_data_ang, positions=positions_ang, widths=2.0, patch_artist=True, manage_ticks=False, showfliers=False)
+    bp2 = ax2.boxplot(box_data_ang, positions=positions_ang, widths=2.0, 
+                      patch_artist=True, manage_ticks=False, showfliers=True)
     for i, patch in enumerate(bp2['boxes']):
         patch.set(facecolor=colors_box[i % 3], alpha=0.6)
 
-    ax2.set_xlabel('Extending Length')
+    ax2.set_xlabel('Longest Arm Length (m)', fontsize=12)
     ax2.set_xticks(extensions)
-    ax2.set_ylabel('Angle error (deg)')
-    ax2.legend()
-    ax2.set_title('RPY RMSE curve + absolute-error distributions (boxplots)')
+    ax2.set_xticklabels(['0.3', '0.35', '0.4'])  # Custom tick labels
+    ax2.set_ylabel('Angle error (deg)', fontsize=12)
+    ax2.legend(fontsize=12)  # Set legend font size
+    # ax2.set_title('RPY absolute-error distributions', fontsize=12, fontweight='bold')
 
     plt.tight_layout()
     plt.show()

@@ -199,6 +199,13 @@ def main(file_path, type, t_ref_ranges):
         plt.ylabel("Position (m)", fontsize=label_size)
         draw_shaded_regions(t_ref_ranges, plt)
 
+        rmse_x = calculate_rmse(t, x, t_ref, x_ref)
+        print(f"RMSE X (m): {rmse_x}")
+        rmse_y = calculate_rmse(t, y, t_ref, y_ref)
+        print(f"RMSE Y (m): {rmse_y}")
+        rmse_z = calculate_rmse(t, z, t_ref, z_ref)
+        print(f"RMSE Z (m): {rmse_z}")
+
         # --------------------------------
         # Subplot (1,2): Attitude (Roll, Pitch, Yaw)
         plt.subplot(3, 2, 2)
@@ -238,6 +245,14 @@ def main(file_path, type, t_ref_ranges):
         # ref_traj duration shaded area
         draw_shaded_regions(t_ref_ranges, plt)
 
+
+
+        rmse_roll = calculate_rmse(t, roll, t_ref, roll_ref)
+        print(f"RMSE Roll (rad): {rmse_roll}")
+        print(f"RMSE Roll (deg): {rmse_roll * 180 / np.pi}")
+        rmse_pitch = calculate_rmse(t, pitch, t_ref, pitch_ref)
+        print(f"RMSE Pitch (rad): {rmse_pitch}")
+        print(f"RMSE Pitch (deg): {rmse_pitch * 180 / np.pi}")
         # calculate RMSE
         rmse_yaw = calculate_rmse(t, yaw, t_ref, yaw_ref, is_yaw=True)
         print(f"RMSE Yaw (rad): {rmse_yaw}")

@@ -168,7 +168,7 @@ def main(file_path, type, t_ref_ranges):
         plt.rcParams.update({"font.size": 11})  # default is 10
         label_size = 14
 
-        fig = plt.figure(figsize=(12, 4))
+        fig = plt.figure(figsize=(13, 4.5))
 
         t_bias = data_xyz["__time"].iloc[0]  # Start from actual data time
         color_ref = "#0C5DA5"
@@ -214,7 +214,7 @@ def main(file_path, type, t_ref_ranges):
         roll_ref = np.array(data_euler_ref["roll"])
         pitch_ref = np.array(data_euler_ref["pitch"])
         # yaw_ref = np.array(data_euler_ref["yaw"])
-        yaw_rate = 1.465
+        yaw_rate = 1.465/2
         t_ref = np.array(data_euler_ref["__time"]) - t_bias
         yaw_ref = np.array(data_euler_ref["yaw"])*yaw_rate*1.1
         # if yaw_ref has a jump, we need to fix it
@@ -229,8 +229,7 @@ def main(file_path, type, t_ref_ranges):
                 array[i] = array[start_index-1] + (desire_value - array[start_index-1]) * (i - start_index + 1) / period
             array[start_index+period:] = desire_value
             return array
-        yaw_ref = change_to_N(yaw_ref, 892, 0, -np.pi/2)
-        plt.plot(t_ref, yaw_ref * 180 / np.pi, label="ref", linestyle="--", color=color_ref)
+        yaw_ref = change_to_N(yaw_ref, 892, 0, -np.pi/4)
 
         t = np.array(data_euler["__time"]) - t_bias
         yaw = np.array(data_euler["yaw"])*yaw_rate
@@ -240,23 +239,9 @@ def main(file_path, type, t_ref_ranges):
                 yaw[i:] -= 2 * np.pi
             elif yaw[i] - yaw[i - 1] < -np.pi:
                 yaw[i:] += 2 * np.pi
-        plt.plot(t, yaw * 180 / np.pi, label="real", color=color_real)
         plt.ylabel("Yaw (deg)", fontsize=label_size)
         # ref_traj duration shaded area
         draw_shaded_regions(t_ref_ranges, plt)
-
-
-
-        rmse_roll = calculate_rmse(t, roll, t_ref, roll_ref)
-        print(f"RMSE Roll (rad): {rmse_roll}")
-        print(f"RMSE Roll (deg): {rmse_roll * 180 / np.pi}")
-        rmse_pitch = calculate_rmse(t, pitch, t_ref, pitch_ref)
-        print(f"RMSE Pitch (rad): {rmse_pitch}")
-        print(f"RMSE Pitch (deg): {rmse_pitch * 180 / np.pi}")
-        # calculate RMSE
-        rmse_yaw = calculate_rmse(t, yaw, t_ref, yaw_ref, is_yaw=True)
-        print(f"RMSE Yaw (rad): {rmse_yaw}")
-        print(f"RMSE Yaw (deg): {rmse_yaw * 180 / np.pi}")
 
         # --------------------------------
         poweroff_index = 4675
@@ -274,10 +259,19 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t, pitch * 180 / np.pi, label="Pitch", color="g")
         plt.plot(t, yaw * 180 / np.pi, label="Yaw", color="b")
 
+        plt.legend(framealpha=legend_alpha, loc="upper left")
 
-        plt.legend(framealpha=legend_alpha)
         plt.ylabel("Attitude (deg)", fontsize=label_size)
-        draw_shaded_regions(t_ref_ranges, plt)
+        rmse_roll = calculate_rmse(t, roll, t_ref, roll_ref)
+        print(f"RMSE Roll (rad): {rmse_roll}")
+        print(f"RMSE Roll (deg): {rmse_roll * 180 / np.pi}")
+        rmse_pitch = calculate_rmse(t, pitch, t_ref, pitch_ref)
+        print(f"RMSE Pitch (rad): {rmse_pitch}")
+        print(f"RMSE Pitch (deg): {rmse_pitch * 180 / np.pi}")
+        # calculate RMSE
+        rmse_yaw = calculate_rmse(t, yaw, t_ref, yaw_ref, is_yaw=True)
+        print(f"RMSE Yaw (rad): {rmse_yaw}")
+        print(f"RMSE Yaw (deg): {rmse_yaw * 180 / np.pi}")
         
         # --------------------------------
         # Subplot (2,1): Thrust commands

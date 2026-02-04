@@ -176,7 +176,7 @@ def main(file_path, type, t_ref_ranges, task):
         plt.rcParams.update({"font.size": 11})  # default is 10
         label_size = 12
 
-        fig = plt.figure(figsize=(12, 4))
+        fig = plt.figure(figsize=(13, 4.5))
 
         t_bias = data_xyz["__time"].iloc[0]  # Start from actual data time
         print(f"t_bias: {t_bias}")
@@ -419,11 +419,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # grasp - list of [start, end] time pairs for multiple shaded regions
-    t_ref_ranges = [[25.0, 40.0],[45.0,60.0],[70.0, 85.0]]  # Each pair [start, end] creates one shaded region
-    task = 'grasp'
+    # t_ref_ranges = [[25.0, 40.0],[45.0,60.0],[70.0, 85.0]]  # Each pair [start, end] creates one shaded region
+    # task = 'grasp'
+    #  python NC_draw_manplt_filter.py ../../../grasp.csv --type 0
+
     
     # valve - example with multiple shaded regions
-    # t_ref_ranges = [5.0, 35.0]  # Two shaded regions
-    # task = 'valve'
-    
+    t_ref_ranges = [[5.0, 35.0]]  # Two shaded regions
+    task = 'valve'
+    # python NC_draw_manplt_filter.py ../../../valve.csv --type 0
+
     main(args.file_path, args.type, t_ref_ranges, task)

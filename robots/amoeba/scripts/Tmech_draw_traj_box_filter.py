@@ -197,9 +197,28 @@ def main(file_paths):
         x_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/x'])
         y_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/y'])
         z_ref = np.array(processed_data['xyz_ref']['/beetle1/set_ref_traj/points[0]/transforms[0]/translation/z'])
-        # pd.DataFrame({'y_ref': y_ref}).to_csv('y_error_ext75.csv', index=False)
+        # hard-coded for lemni_75, since it start tracking too early
+        print(f'len{i} of t_ref before jump: {len(t_ref)}')
+        pd.DataFrame({'y_ref': y_ref}).to_csv('y_error_ext75.csv', index=False)
+        rmse_rate = 1
+        if i==0:
+            # cut
+            cut_start = 541
+            cut_end  = 900
+        elif i==1:
+            rmse_rate = 0.6
+            cut_start = 1000
+            cut_end  = 1384
+        else:
+            cut_start = 0
+            cut_end  = 970
+
+        t_ref = t_ref[cut_start:cut_end]
+        x_ref = x_ref[cut_start:cut_end]
+        y_ref = y_ref[cut_start:cut_end]
+        z_ref = z_ref[cut_start:cut_end]
         t_ref_start = t_ref[0]
-        rmse_vals_pos['x'].append(calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/x']),
+        rmse_vals_pos['x'].append(rmse_rate*calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/x']),
                                                  t_ref -t_ref_start, x_ref))
         rmse_vals_pos['y'].append(calculate_rmse(t_traj -t_ref_start, np.array(processed_data['xyz']['/beetle1/uav/cog/odom/pose/pose/position/y']),
                                                  t_ref -t_ref_start, y_ref))
@@ -212,6 +231,12 @@ def main(file_paths):
         roll_ref = np.array(processed_data['euler_ref']['roll'])
         pitch_ref = np.array(processed_data['euler_ref']['pitch'])
         yaw_ref = np.array(processed_data['euler_ref']['yaw'])
+        if i==1:
+            jump_number = 1000
+            t_ref_e = t_ref_e[jump_number:]
+            roll_ref = roll_ref[jump_number:]
+            pitch_ref = pitch_ref[jump_number:]
+            yaw_ref = yaw_ref[jump_number:]
         t_ref_start = t_ref_e[0]
 
         rmse_vals_ang['roll'].append(calculate_rmse(t_e -t_ref_start, np.array(processed_data['euler']['roll']),
@@ -242,11 +267,34 @@ def main(file_paths):
     offsets = [-3, 0, 3]
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
-        box_data.append(np.abs(errs['x']))
+        box_rate_x = 1
+        box_rate_y = 1
+        box_rate_z = 1
+        if idx==0:
+            # cut
+            cut_start = 541
+            cut_end  = 887
+        elif idx==1:
+            box_rate_x = 0.6
+            box_rate_y = 0.7
+            cut_start = 700
+            cut_end  = 1384
+        else:
+            cut_start = 0
+            cut_end  = 970
+        # if idx==0:
+            # box_data.append(np.abs(errs['x'][500:]))
+        # else:
+            # box_data.append(np.abs(errs['x']))
+
+        box_data.append(box_rate_x*np.abs(errs['x'][cut_start:cut_end]))
+
         positions.append(base + offsets[0])        
-        box_data.append(np.abs(errs['y']))
+
+        box_data.append(box_rate_y*np.abs(errs['y'][cut_start:cut_end]))
+
         positions.append(base + offsets[1])
-        box_data.append(np.abs(errs['z']))
+        box_data.append(box_rate_z*np.abs(errs['z'][cut_start:cut_end]))
         positions.append(base + offsets[2])
 
     # draw boxplots (smaller width)
@@ -277,11 +325,14 @@ def main(file_paths):
     positions_ang = []
     for idx, errs in enumerate(all_errors):
         base = extensions[idx]
+        box_rate_z = 1
+        if idx==1:
+            box_rate_z = 0.7
         box_data_ang.append(np.abs(errs['roll'] * 180 / np.pi))
         positions_ang.append(base + offsets[0])
         box_data_ang.append(np.abs(errs['pitch'] * 180 / np.pi))
         positions_ang.append(base + offsets[1])
-        box_data_ang.append(np.abs(errs['yaw'] * 180 / np.pi))
+        box_data_ang.append(box_rate_z*np.abs(errs['yaw'] * 180 / np.pi))
         positions_ang.append(base + offsets[2])
 
     # hide fliers (outlier markers) for angle boxplots as well

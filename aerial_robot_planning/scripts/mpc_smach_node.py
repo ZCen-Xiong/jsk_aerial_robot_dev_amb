@@ -5,6 +5,7 @@ Created by li-jinjie on 25-1-4.
 import os
 import sys
 import argparse
+import pickle
 
 import rospy
 import rospkg
@@ -253,6 +254,42 @@ class TrackState(smach.State):
         return "done_track"
 
 
+def _smach_viewer_needs_raw_pickle_local_data():
+    """Detect whether installed smach_viewer decodes local_data without base64."""
+    try:
+        import smach_viewer.smach_viewer_base as smach_viewer_base
+
+        source = inspect.getsource(smach_viewer_base.ContainerNode._load_local_data)
+        return "base64.b64decode" not in source
+    except Exception:
+        return False
+
+
+def _patch_smach_introspection_for_legacy_viewer_if_needed():
+
+    if not _smach_viewer_needs_raw_pickle_local_data():
+        return
+
+    if getattr(smach_ros.introspection.ContainerProxy, "_legacy_viewer_patched", False):
+        return
+
+    def _publish_status_legacy_compatible(self, info_str=""):
+        with self._status_pub_lock:
+            state_msg = smach_ros.introspection.SmachContainerStatus(
+                smach_ros.introspection.Header(stamp=rospy.Time.now()),
+                self._path,
+                self._container.get_initial_states(),
+                self._container.get_active_states(),
+                pickle.dumps(self._container.userdata._data, protocol=0).decode("utf-8"),
+                info_str,
+            )
+            self._status_pub.publish(state_msg)
+
+    smach_ros.introspection.ContainerProxy._publish_status = _publish_status_legacy_compatible
+    smach_ros.introspection.ContainerProxy._legacy_viewer_patched = True
+    rospy.logwarn("Applied SMACH introspection compatibility patch for legacy smach_viewer local_data decoding.")
+
+
 ###############################################
 # Main SMACH Entry Point
 ###############################################
@@ -271,6 +308,9 @@ def main(args):
 
     # Create a top-level SMACH state machine
     sm = smach.StateMachine(outcomes=["DONE"])
+
+    # Workaround for environments where smach_viewer local_data decoding is mismatched.
+    _patch_smach_introspection_for_legacy_viewer_if_needed()
 
     # Declare user data fields
     sm.userdata.robot_name = args.robot_name

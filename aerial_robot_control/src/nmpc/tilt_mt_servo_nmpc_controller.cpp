@@ -509,6 +509,7 @@ std::vector<double> nmpc::TiltMtServoNMPC::PhysToNMPCParams() const
 
 void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
 {
+  initAllocMat();
   // restore velocity constraints after hovering
   if (navigator_->getNaviState() == aerial_robot_navigation::HOVER_STATE and has_restored_vel_ == false)
   {
@@ -549,6 +550,14 @@ void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
   {
     gimbal_ctrl_cmd_.name.emplace_back("gimbal" + std::to_string(i + 1));
     gimbal_ctrl_cmd_.position.push_back(getCommand(motor_num_ + i));
+  }
+  // update the thrust pos of the allocation
+
+  static ros::Time last_alloc_log_time(0);
+  if ((ros::Time::now() - last_alloc_log_time).toSec() > 1.0)
+  {
+    cout << "alloc_mat_:" << endl << alloc_mat_ << endl;
+    last_alloc_log_time = ros::Time::now();
   }
 }
 

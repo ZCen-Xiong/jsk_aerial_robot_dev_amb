@@ -346,12 +346,8 @@ void nmpc::TiltMtServoNMPC::initAllocMat()
   const map<int, int> rotor_dr = robot_model_->getRotorDirection();
   double kq_d_kt = abs(robot_model_->getMFRate());  // PAY ATTENTION: should be positive value
 
-  /* alloc mat */
-  alloc_mat_.resize(0, 0);
-  alloc_mat_pinv_.resize(0, 0);
-
-  // construct alloc_mat_
-  alloc_mat_ = Eigen::MatrixXd::Zero(6, 2 * rotor_num);
+  // 先在局部变量里构建完整矩阵，再一次性提交，避免并发读到半写入状态。
+  Eigen::MatrixXd alloc_mat_new = Eigen::MatrixXd::Zero(6, 2 * rotor_num);
 
   for (int i = 0; i < rotor_num; i++)
   {
@@ -361,21 +357,26 @@ void nmpc::TiltMtServoNMPC::initAllocMat()
     double sqrt_p_xy = sqrt(p_b.x() * p_b.x() + p_b.y() * p_b.y());
 
     // - force
-    alloc_mat_(0, 2 * i) = p_b.y() / sqrt_p_xy;
-    alloc_mat_(1, 2 * i) = -p_b.x() / sqrt_p_xy;
-    alloc_mat_(2, 2 * i + 1) = 1;
+    alloc_mat_new(0, 2 * i) = p_b.y() / sqrt_p_xy;
+    alloc_mat_new(1, 2 * i) = -p_b.x() / sqrt_p_xy;
+    alloc_mat_new(2, 2 * i + 1) = 1;
 
     // - torque
-    alloc_mat_(3, 2 * i) = -dr * kq_d_kt * p_b.y() / sqrt_p_xy + p_b.x() * p_b.z() / sqrt_p_xy;
-    alloc_mat_(4, 2 * i) = dr * kq_d_kt * p_b.x() / sqrt_p_xy + p_b.y() * p_b.z() / sqrt_p_xy;
-    alloc_mat_(5, 2 * i) = -p_b.x() * p_b.x() / sqrt_p_xy - p_b.y() * p_b.y() / sqrt_p_xy;
+    alloc_mat_new(3, 2 * i) = -dr * kq_d_kt * p_b.y() / sqrt_p_xy + p_b.x() * p_b.z() / sqrt_p_xy;
+    alloc_mat_new(4, 2 * i) = dr * kq_d_kt * p_b.x() / sqrt_p_xy + p_b.y() * p_b.z() / sqrt_p_xy;
+    alloc_mat_new(5, 2 * i) = -p_b.x() * p_b.x() / sqrt_p_xy - p_b.y() * p_b.y() / sqrt_p_xy;
 
-    alloc_mat_(3, 2 * i + 1) = p_b.y();
-    alloc_mat_(4, 2 * i + 1) = -p_b.x();
-    alloc_mat_(5, 2 * i + 1) = -dr * kq_d_kt;
+    alloc_mat_new(3, 2 * i + 1) = p_b.y();
+    alloc_mat_new(4, 2 * i + 1) = -p_b.x();
+    alloc_mat_new(5, 2 * i + 1) = -dr * kq_d_kt;
   }
 
-  alloc_mat_pinv_ = aerial_robot_model::pseudoinverse(alloc_mat_);
+  Eigen::MatrixXd alloc_mat_pinv_new = aerial_robot_model::pseudoinverse(alloc_mat_new);
+  {
+    std::lock_guard<std::mutex> lock(alloc_mat_mutex_);
+    alloc_mat_ = std::move(alloc_mat_new);
+    alloc_mat_pinv_ = std::move(alloc_mat_pinv_new);
+  }
 }
 
 /* Note: The difference between this function and prepareNMPCParams() is:
@@ -509,16 +510,15 @@ std::vector<double> nmpc::TiltMtServoNMPC::PhysToNMPCParams() const
 
 void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
 {
-  initAllocMat();
   // restore velocity constraints after hovering
   if (navigator_->getNaviState() == aerial_robot_navigation::HOVER_STATE and has_restored_vel_ == false)
   {
     modifyVelConstraints(vel_min_, vel_max_);
     has_restored_vel_ = true;
   }
-
+  
   prepareNMPCRef();
-
+  
   prepareNMPCParams();
 
   /* prepare initial value */
@@ -541,7 +541,7 @@ void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
   {
     flight_cmd_.base_thrust[i] = (float)getCommand(i);
   }
-
+  
   // - servo angle
   gimbal_ctrl_cmd_.header.stamp = ros::Time::now();
   gimbal_ctrl_cmd_.name.clear();
@@ -552,13 +552,14 @@ void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
     gimbal_ctrl_cmd_.position.push_back(getCommand(motor_num_ + i));
   }
   // update the thrust pos of the allocation
-
+  
   static ros::Time last_alloc_log_time(0);
   if ((ros::Time::now() - last_alloc_log_time).toSec() > 1.0)
   {
     cout << "alloc_mat_:" << endl << alloc_mat_ << endl;
     last_alloc_log_time = ros::Time::now();
   }
+  initAllocMat();
 }
 
 void nmpc::TiltMtServoNMPC::sendCmd()
@@ -566,12 +567,12 @@ void nmpc::TiltMtServoNMPC::sendCmd()
   /* publish */
   if (motor_num_ > 0)
     pub_flight_cmd_.publish(flight_cmd_);
-  if (joint_num_ > 0)
+    if (joint_num_ > 0)
     pub_gimbal_control_.publish(gimbal_ctrl_cmd_);
-}
+  }
 
-void nmpc::TiltMtServoNMPC::prepareNMPCRef()
-{
+  void nmpc::TiltMtServoNMPC::prepareNMPCRef()
+  {
   // TODO: wrap to a state machine
   if (!is_traj_tracking_)
   {
@@ -778,7 +779,16 @@ void nmpc::TiltMtServoNMPC::allocateToXU(const tf::Vector3& ref_pos_i, const tf:
   }
   // =============================================================
 
+  std::lock_guard<std::mutex> lock(alloc_mat_mutex_);
+
   // 1) do one allocation
+  // 防御性检查：正常情况下不应触发。触发说明初始化顺序或并发访问仍有问题。
+  if (alloc_mat_pinv_.rows() != 2 * motor_num_ || alloc_mat_pinv_.cols() != 6)
+  {
+    ROS_FATAL("[DATA RACE] alloc_mat_pinv_ has wrong size: %ldx%ld, expected %dx6",
+              (long)alloc_mat_pinv_.rows(), (long)alloc_mat_pinv_.cols(), 2 * motor_num_);
+    throw std::runtime_error("alloc_mat_pinv_ size mismatch");
+  }
   Eigen::VectorXd x_lambda = alloc_mat_pinv_ * ref_wrench_b;
   std::vector<double> ft_ref_vec(motor_num_);
   std::vector<double> a_ref_vec(joint_num_);

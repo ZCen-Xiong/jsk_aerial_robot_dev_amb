@@ -9,6 +9,7 @@
 
 #include <angles/angles.h>
 #include <tf_conversions/tf_eigen.h>
+#include <mutex>
 #include <numeric>
 
 /* dynamic reconfigure */
@@ -101,6 +102,7 @@ protected:
 
   Eigen::MatrixXd alloc_mat_;
   Eigen::MatrixXd alloc_mat_pinv_;
+  std::mutex alloc_mat_mutex_;
 
   bool is_traj_tracking_ = false;  // TODO: tmp value. should be combined with inner traj. tracking in the future
   trajectory_msgs::MultiDOFJointTrajectory last_traj_msg_;

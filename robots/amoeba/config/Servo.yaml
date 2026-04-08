@@ -55,7 +55,7 @@ servo_controller:
       name: extendable_joint1
       mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
       simulation:
-        pid: {p: 100.0, i: 1.0, d: 10.0, i_clamp_max: 50.0, i_clamp_min: -50.0}
+        pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
         type: effort_controllers/JointPositionController
 
@@ -64,7 +64,7 @@ servo_controller:
       name: extendable_joint2
       mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
       simulation:
-        pid: {p: 100.0, i: 1.0, d: 10.0, i_clamp_max: 50.0, i_clamp_min: -50.0}
+        pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
         type: effort_controllers/JointPositionController
 
@@ -73,7 +73,7 @@ servo_controller:
       name: extendable_joint3
       mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
       simulation:
-        pid: {p: 100.0, i: 1.0, d: 10.0, i_clamp_max: 50.0, i_clamp_min: -50.0}
+        pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
         type: effort_controllers/JointPositionController
 
@@ -82,6 +82,6 @@ servo_controller:
       name: extendable_joint4
       mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
       simulation:
-        pid: {p: 100.0, i: 1.0, d: 10.0, i_clamp_max: 50.0, i_clamp_min: -50.0}
+        pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
         type: effort_controllers/JointPositionController

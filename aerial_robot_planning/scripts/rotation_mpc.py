@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import local modules
 # import amb_trans
-from trajs import YawRotationRoll0dTraj
-from pub_mpc_joint_traj import MPCTrajPtPub
+from aerial_robot_planning.trajs import YawRotationRoll0dTraj
+from aerial_robot_planning.pub_mpc_joint_traj import MPCTrajPtPub
 from spinal.msg import ServoStates, ServoControlCmd
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry

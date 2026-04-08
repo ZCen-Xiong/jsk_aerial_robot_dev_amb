@@ -133,6 +133,30 @@ class LemniscateTraj(BaseTraj):
 
         return x, y, z, vx, vy, vz, ax, ay, az
 
+class LemniscateTrajYaw(LemniscateTraj):
+
+    def __init__(self, loop_num) -> None:
+        super().__init__(loop_num)
+        self.a_orientation = 0.5
+
+    def get_3d_orientation(self, t: float) -> Tuple[
+        float, float, float, float, float, float, float, float, float, float]:
+        t = t + self.T * 1 / 4
+
+        roll = 0.0
+        pitch = 0.0
+        yaw = np.pi / 2 * np.sin(self.omega * t + np.pi) + np.pi / 2
+        (qx, qy, qz, qw) = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+
+        roll_rate = 0.0
+        pitch_rate = 0.0
+        yaw_rate = np.pi / 2 * self.omega * np.cos(self.omega * t + np.pi / 2)
+
+        roll_acc = 0.0
+        pitch_acc = 0.0
+        yaw_acc = -np.pi / 2 * self.omega ** 2 * np.sin(self.omega * t + np.pi / 2)
+
+        return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
 
 class LemniscateTrajOmni(LemniscateTraj):
     def __init__(self, loop_num) -> None:
@@ -647,13 +671,20 @@ class PitchSetPtTraj(BaseTraj):
         return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
 
 
-class YawRotationRoll090dTraj(BaseTraj):
+class YawRotationRoll0dTraj(BaseTraj):
     def __init__(self, loop_num) -> None:
         super().__init__(loop_num)
         self.child_frame_id = "ee"
 
         self.T = 30  # total time for one full rotation cycle
         self.omega = 2 * np.pi / self.T  # angular velocity
+        
+    # this set position shouldn't be here, but to compatible with rotation_mpc.py, both need refactor.
+    def set_position(self, x, y, z):
+        """Set the position where the rotation should be performed"""
+        self.position_x = x
+        self.position_y = y
+        self.position_z = z
 
     def get_3d_orientation(
         self, t: float
@@ -692,7 +723,7 @@ class YawRotationRoll090dTraj(BaseTraj):
 
         yaw = self.omega * t
 
-        roll = 0.0
+        roll = np.pi / 2.0
         pitch = 0.0
 
         (qx, qy, qz, qw) = tf.transformations.quaternion_from_euler(roll, pitch, yaw, axes="rxyz")

@@ -970,7 +970,25 @@ void nmpc::TiltMtServoNMPC::callbackViz(const ros::TimerEvent& event)
 void nmpc::TiltMtServoNMPC::callbackJointStates(const sensor_msgs::JointStateConstPtr& msg)
 {
   for (int i = 0; i < joint_num_; i++)
-    joint_angles_[i] = msg->position[i];
+  {
+    const std::string joint_name = "gimbal" + std::to_string(i + 1);
+    auto name_it = std::find(msg->name.begin(), msg->name.end(), joint_name);
+
+    if (name_it == msg->name.end())
+    {
+      ROS_WARN_THROTTLE(1.0, "Cannot find %s in joint_states. Skip updating this joint.", joint_name.c_str());
+      continue;
+    }
+
+    const auto index = std::distance(msg->name.begin(), name_it);
+    if (index >= msg->position.size())
+    {
+      ROS_WARN_THROTTLE(1.0, "joint_states position size is smaller than the index of %s.", joint_name.c_str());
+      continue;
+    }
+
+    joint_angles_[i] = msg->position[index];
+  }
 }
 
 /* TODO: this function is just for test. We may need a more general function to set all kinds of state */

@@ -8,12 +8,19 @@
     ## main body
     <link name="main_body">
       <inertial>
-        <origin xyz="-0.00034742 0.00036736 0.03608269" rpy="0 0 0"/>
-        <mass value="1.52925596"/>
+        <origin xyz="0.00058522 -0.00034768 0.02578334" rpy="0 0 0"/>
+        <mass value="1.39175439"/>
         <inertia
-            ixx="0.00714742" iyy=" 0.00722236" izz="0.00472163"
-            ixy="0.00000654" ixz=" 0.00015170" iyz="0.00005556"/>
+            ixx =" 0.00405786" iyy =" 0.00427970" izz =" 0.00420946" 
+            ixy =" -0.00000961" ixz =" 0.00016759" iyz =" -0.00002723"/>
+        # battery
+        <!-- <origin xyz="0.00035664 -0.00021188 -0.00225415" rpy="0 0 0"/>
+        <mass value="2.28375439"/>
+        <inertia
+          ixx =" 0.00860275" iyy =" 0.00842374" izz =" 0.00708753" 
+          ixy =" -0.00000972" ixz =" 0.00019043" iyz =" -0.00004080"/> -->
       </inertial>   
+        
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -73,11 +80,11 @@
       ## female extendable arm link 
       <link name="chain_link${id}">
         <inertial>
-          <origin xyz="-0.0917549 -0.000000 -0.0010835" rpy="0 0 0"/>
-          <mass value="0.1110974"/>
+          <origin xyz="-0.0679083 0.0000000 -0.0014430" rpy="0 0 0"/>
+          <mass value="0.1143400"/>
           <inertia
-              ixx="0.0000194" ixy="0.0" ixz="-0.0000107"
-              iyy="0.0004353" iyz="0.0" izz="0.0004368"/>
+              ixx ="  0.0000329" iyy ="0.0003105" izz =" 0.0003140"
+              ixy =" 0.0000000" ixz ="-0.0000088" iyz =" 0.0000000"/>
         </inertial>
         <!-- the motor_case's limit pin is 87mm from the servo -->
         <collision>
@@ -163,10 +170,10 @@
     </xacro:macro>
 
     ## dummy rotor arms
-    <xacro:dummy_rotor_arm id = "${child1}" x = " 0.198956" y=" 0.198956" z = "0.0154" yaw = "${pi*1.0/4.0}"/>
-    <xacro:dummy_rotor_arm id = "${child2}" x = "-0.198956" y=" 0.198956" z = "0.0154" yaw = "${pi*3.0/4.0}"/>
-    <xacro:dummy_rotor_arm id = "${child3}" x = "-0.198956" y="-0.198956" z = "0.0154" yaw = "${pi*5.0/4.0}"/>
-    <xacro:dummy_rotor_arm id = "${child4}" x = " 0.198956" y="-0.198956" z = "0.0154" yaw = "${-pi*1.0/4.0}"/>
+    <xacro:dummy_rotor_arm id = "${child1}" x = " 0.150755" y=" 0.150755" z = "0.0175" yaw = "${pi*1.0/4.0}"/>
+    <xacro:dummy_rotor_arm id = "${child2}" x = "-0.150755" y=" 0.150755" z = "0.0175" yaw = "${pi*3.0/4.0}"/>
+    <xacro:dummy_rotor_arm id = "${child3}" x = "-0.150755" y="-0.150755" z = "0.0175" yaw = "${pi*5.0/4.0}"/>
+    <xacro:dummy_rotor_arm id = "${child4}" x = " 0.150755" y="-0.150755" z = "0.0175" yaw = "${-pi*1.0/4.0}"/>
 
     <xacro:friction self="main_body"/>
   </xacro:macro>
@@ -176,11 +183,11 @@
     #### rotor parent link (virtual) ####
     <link name="gimbal_link${self}">
       <inertial>
-        <origin xyz="0.02786199 -0.00000778 -0.01385805" rpy="0 0 0"/>
-        <mass value="0.1702000"/>
+        <origin xyz="0.07576614 0.00018422 0.00143736" rpy="0 0 0"/>
+        <mass value="0.17880658"/>
         <inertia
-            ixx="0.00017696" iyy="0.00018593" izz="0.00027041"
-            ixy="0.00000002" ixz="-0.00002708" iyz="0.0"/>
+            ixx =" 0.00019959" iyy =" 0.00028405" izz =" 0.00038626" 
+            ixy =" -0.00000220" ixz = "0.00000178" iyz ="-0.00000004"/>
       </inertial>
       <collision>
         <origin xyz="0.06 0 0" rpy="0 0 0"/>
@@ -248,7 +255,7 @@
     <joint name="rotor_parent_link_joint${self}" type="fixed">
       <parent link="gimbal_link${self}"/>
       <child link="rotor_parent${self}"/>
-      <origin rpy="0 0 0" xyz="0.02185 0.0 0.0"/>
+      <origin rpy="0 0 0" xyz="0.083 0.0 0.0"/>
     </joint>
 
     #### rotor joint (virtual) ####

@@ -972,15 +972,15 @@ void nmpc::TiltMtServoNMPC::callbackJointStates(const sensor_msgs::JointStateCon
   for (int i = 0; i < joint_num_; i++)
   {
     const std::string joint_name = "gimbal" + std::to_string(i + 1);
-    auto name_it = std::find(msg->name.begin(), msg->name.end(), joint_name);
+    auto gimbal_joint_name = std::find(msg->name.begin(), msg->name.end(), joint_name);
 
-    if (name_it == msg->name.end())
+    if (gimbal_joint_name == msg->name.end())
     {
       ROS_WARN_THROTTLE(1.0, "Cannot find %s in joint_states. Skip updating this joint.", joint_name.c_str());
       continue;
     }
 
-    const auto index = std::distance(msg->name.begin(), name_it);
+    const auto index = std::distance(msg->name.begin(), gimbal_joint_name);
     if (index >= msg->position.size())
     {
       ROS_WARN_THROTTLE(1.0, "joint_states position size is smaller than the index of %s.", joint_name.c_str());

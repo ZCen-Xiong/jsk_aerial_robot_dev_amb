@@ -54,7 +54,7 @@
     <joint name="fc_joint" type="fixed">
       <child link="fc"/>
       <parent link="main_body"/>
-      <origin rpy="0 0 0" xyz="-0.0175 -0.0015 0.06347"/>  # should be aligned with the position of IMU
+      <origin rpy="0 0 0" xyz="-0.0175 -0.0015 0.06047"/>  # should be aligned with the position of IMU
       <!-- changed from omni to amoeba -->
     </joint>
 

@@ -18,37 +18,47 @@ motor_info:
         # POLYNOMIAL Mode ref: https://github.com/jsk-ros-pkg/jsk_aerial_robot/blob/master/aerial_robot_nerve/spinal/mcu_project/lib/Jsk_Lib/flight_control/attitude/attitude_control.cpp#L832
         vel_ref_num: 5
         ref1:
-                voltage: 25.09 # [V]
-                max_thrust: 24.4020 # [N]
-                polynominal3: 2.97877161  # x10^3
-                polynominal2: -14.05324570  # x10^2
-                polynominal1: 32.37351102  # x10^1
-                polynominal0: 51.90014589  # x10^0
+                voltage: 25.2 # [V]
+                max_thrust: 18.0750 # N
+                polynominal4: 1.46730692  # x10^4
+                polynominal3: -14.36655551  # x10^3
+                polynominal2: 29.78253140  # x10^2
+                polynominal1: 3.77009528  # x10^1
+                polynominal0: 54.85807505  # x10^0
+
         ref2:
-                voltage: 24.14 # [V]
-                max_thrust: 22.7408 # [N]
-                polynominal3: 3.79791642  # x10^3
-                polynominal2: -16.70081320  # x10^2
-                polynominal1: 35.30631205  # x10^1
-                polynominal0: 51.80790765  # x10^0
+                voltage: 24.20 # [V]
+                max_thrust: 18.5398 # N
+                polynominal4: 4.41630103  # x10^4
+                polynominal3: -24.96489103  # x10^3
+                polynominal2: 40.83097780  # x10^2
+                polynominal1: 2.04240478  # x10^1
+                polynominal0: 54.95776399  # x10^0
+
         ref3:
-                voltage: 23.23 # [V]
-                max_thrust: 21.6353 # [N]
-                polynominal3: 4.22756569  # x10^3
-                polynominal2: -17.92885378  # x10^2
-                polynominal1: 36.88290715  # x10^1
-                polynominal0: 51.92626194  # x10^0
+                voltage: 23.20 # [V]
+                max_thrust: 18.9598 # N
+                polynominal4: 6.36105924  # x10^4
+                polynominal3: -31.62690016  # x10^3
+                polynominal2: 46.87143537  # x10^2
+                polynominal1: 2.51549499  # x10^1
+                polynominal0: 54.94123093  # x10^0
+
         ref4:
-                voltage: 22.33 # [V]
-                max_thrust: 20.1849 # [N]
-                polynominal3: 5.16221759  # x10^3
-                polynominal2: -20.63203999  # x10^2
-                polynominal1: 39.77248596  # x10^1
-                polynominal0: 51.81942204  # x10^0
+                voltage: 22.20 # [V]
+                max_thrust: 17.3809 # N
+                polynominal4: 10.22625163  # x10^4
+                polynominal3: -43.08813930  # x10^3
+                polynominal2: 55.66088615  # x10^2
+                polynominal1: 3.66116634  # x10^1
+                polynominal0: 54.38660586  # x10^0
+
         ref5:
-                voltage: 21.40 # [V]
-                max_thrust: 18.7075 # [N]
-                polynominal3: 6.54431964  # x10^3
-                polynominal2: -24.10320159  # x10^2
-                polynominal1: 42.80435622  # x10^1
-                polynominal0: 52.00842335  # x10^0
+                voltage: 21.20 # [V]
+                max_thrust: 16.2076 # N
+                polynominal4: 16.38556727  # x10^4
+                polynominal3: -63.49447426  # x10^3
+                polynominal2: 76.36731629  # x10^2
+                polynominal1: -0.84126732  # x10^1
+                polynominal0: 54.78809463  # x10^0
+

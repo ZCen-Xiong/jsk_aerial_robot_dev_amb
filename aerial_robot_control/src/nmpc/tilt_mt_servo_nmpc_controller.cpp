@@ -553,12 +553,12 @@ void nmpc::TiltMtServoNMPC::controlCore(bool is_warmup)
   }
   // update the thrust pos of the allocation
   
-  static ros::Time last_alloc_log_time(0);
-  if ((ros::Time::now() - last_alloc_log_time).toSec() > 1.0)
-  {
-    cout << "alloc_mat_:" << endl << alloc_mat_ << endl;
-    last_alloc_log_time = ros::Time::now();
-  }
+  // static ros::Time last_alloc_log_time(0);
+  // if ((ros::Time::now() - last_alloc_log_time).toSec() > 1.0)
+  // {
+  //   cout << "alloc_mat_:" << endl << alloc_mat_ << endl;
+  //   last_alloc_log_time = ros::Time::now();
+  // }
   initAllocMat();
 }
 

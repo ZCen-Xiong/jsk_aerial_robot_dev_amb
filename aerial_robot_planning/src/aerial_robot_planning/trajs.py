@@ -285,12 +285,52 @@ class SetPointTraj(BaseTraj):
         return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
 
 
-class PitchRotationTraj(BaseTraj):
+class PitchRotationTrajHalf(BaseTraj):
     def __init__(self, loop_num) -> None:
         super().__init__(loop_num)
         self.child_frame_id = "ee"
 
         self.T = 10  # total time for one full rotation cycle (0 to -2.5 and back to 0)
+        self.omega = 2 * np.pi / self.T  # angular velocity
+
+    def get_3d_orientation(
+        self, t: float
+    ) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
+        # Calculate the pitch angle based on time
+        max_pitch = 1.57
+
+        if 0 < t <= self.T / 2:
+            pitch = max_pitch * (2 * t / self.T)  # from 0 to max_pitch rad
+        elif self.T / 2 < t <= self.T:
+            pitch = max_pitch * (2 - 2 * t / self.T)  # from max_pitch to 0 rad
+        else:
+            pitch = 0.0
+
+        roll = 0.0
+        yaw = 0.0
+
+        (qx, qy, qz, qw) = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+
+        if t <= self.T / 2:
+            pitch_rate = max_pitch * 2 / self.T
+        else:
+            pitch_rate = -max_pitch * 2 / self.T
+
+        roll_rate = 0.0
+        yaw_rate = 0.0
+
+        roll_acc = 0.0
+        pitch_acc = 0.0
+        yaw_acc = 0.0
+
+        return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
+
+class PitchRotationTraj(BaseTraj):
+    def __init__(self, loop_num) -> None:
+        super().__init__(loop_num)
+        self.child_frame_id = "ee"
+
+        self.T = 20  # total time for one full rotation cycle (0 to -2.5 and back to 0)
         self.omega = 2 * np.pi / self.T  # angular velocity
 
     def get_3d_orientation(

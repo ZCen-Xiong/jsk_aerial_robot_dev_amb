@@ -8,11 +8,23 @@
     ## main body
     <link name="main_body">
       <inertial>
-        <origin xyz="0.00058522 -0.00034768 0.02578334" rpy="0 0 0"/>
-        <mass value="1.49175439"/>
-        <inertia
-            ixx =" 0.00405786" iyy =" 0.00427970" izz =" 0.00420946" 
-            ixy =" -0.00000961" ixz =" 0.00016759" iyz =" -0.00002723"/>
+        <xacro:unless value="${battery == 1}">
+          <origin xyz="0.01558522 -0.00034768 0.02578334" rpy="0 0 0"/>
+          <mass value="1.49175439"/>
+          <inertia
+              ixx =" 0.00405786" iyy =" 0.00427970" izz =" 0.00420946"
+              ixy =" -0.00000961" ixz =" 0.00016759" iyz =" -0.00002723"/>
+        </xacro:unless>
+        <xacro:if value="${battery == 1}">
+          <!-- with battery -->
+          <origin xyz="0.00035664 -0.00021188 -0.00225415" rpy="0 0 0"/>
+          <mass value="2.28375439"/>
+          <inertia
+              ixx =" 0.00860275" iyy =" 0.00842374" izz =" 0.00708753"
+              ixy =" -0.00000972" ixz =" 0.00019043" iyz =" -0.00004080"/>
+        </xacro:if>
+      
+      
       </inertial>   
         
       <visual>
@@ -22,9 +34,9 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0.0335" rpy="0 0 ${pi/4}"/>
+        <origin xyz="0 0 0.0135" rpy="0 0 ${pi/4}"/>
         <geometry>
-          <box size="0.12 0.12 0.225"/>
+          <box size="0.12 0.12 0.185"/>
         </geometry>
       </collision>
     </link>
@@ -275,6 +287,8 @@
 
 <!-- Define beetle -->
   <xacro:arg name="robot_name" default="beetle-art-omni" />
+  <xacro:arg name="battery" default="0" />
+  <xacro:property name="battery" value="$(arg battery)" />
 
   <xacro:beetle_center_link child1="1" child2="2" child3="3" child4="4"/>
   <xacro:beetle_thrust_link self="1" rotor_direction="1"/>
@@ -295,7 +309,7 @@
   <joint name="main_body_to_end" type="fixed">
     <parent link="main_body"/>
     <child link="end"/>
-    <origin xyz="0 0 0.1725" rpy="0 0 0"/>
+    <origin xyz="0 0 0.106" rpy="0 0 0"/>
   </joint>
 
   <!-- Conditionally create the fork or ball link based on the parameter value -->

@@ -24,6 +24,7 @@
     <!-- none; mom for momentum; ma for hybrid mode ; acc for acceleration; mhe_ma for mhe with acc and momentum est. -->
 
   <arg name="end_effector" default="none"/>  <!-- "none", "ball", "fork", "brush", "sensor_ball"   -->
+  <arg name="battery" default="0"/>  <!-- 0: no battery inertia, 1: with battery inertia -->
 
   ###########  Parameters  ###########
   <group ns="$(arg robot_ns)">
@@ -88,7 +89,7 @@
   <include file="$(find aerial_robot_model)/launch/aerial_robot_model.launch" >
     <arg name="headless" value="$(arg headless)" />
     <arg name="robot_model" value="$(find amoeba)/robots/amoeba.$(arg description_mode).xacro"/>
-    <arg name="model_options" value="end_effector:=$(arg end_effector)"/>
+    <arg name="model_options" value="end_effector:=$(arg end_effector) battery:=$(arg battery)"/>
     <arg name="robot_ns" value="$(arg robot_ns)" />
     <arg name="rviz_config" value="$(arg config_dir)/rviz/nmpc.rviz" />
     <arg name="rviz_init_pose" value="$(arg config_dir)/rviz/RvizInit.yaml" />

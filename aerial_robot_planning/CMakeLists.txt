@@ -169,6 +169,7 @@ include_directories(
    scripts/trans_mpc.py
    scripts/mpc_smach_node.py
    scripts/glove_control_pub.py
+   scripts/agg_state.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 

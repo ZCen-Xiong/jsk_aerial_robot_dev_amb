@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_name" default="beetle1" />
+  <arg name="roll" default="90.0" />
+  <arg name="pitch" default="0.0" />
+  <arg name="yaw" default="nan" />
+  <arg name="angle_unit" default="deg" />
+  <arg name="enable_joy_yaw" default="false" />
+  <arg name="max_angle_rate" default="0.35" />
+  <arg name="max_xy_vel" default="0.3" />
+  <arg name="max_z_vel" default="0.15" />
+
+  <node pkg="aerial_robot_planning" type="agg_state.py" name="agg_state" output="screen">
+    <param name="robot_name" value="$(arg robot_name)" />
+    <param name="roll" value="$(arg roll)" />
+    <param name="pitch" value="$(arg pitch)" />
+    <param name="yaw" value="$(arg yaw)" />
+    <param name="angle_unit" value="$(arg angle_unit)" />
+    <param name="enable_joy_yaw" value="$(arg enable_joy_yaw)" />
+    <param name="max_angle_rate" value="$(arg max_angle_rate)" />
+    <param name="max_xy_vel" value="$(arg max_xy_vel)" />
+    <param name="max_z_vel" value="$(arg max_z_vel)" />
+  </node>
+</launch>

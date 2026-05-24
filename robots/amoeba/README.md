@@ -1,4 +1,4 @@
-# Beetle-Art-Omni
+# AMOEBA-Beetle-Art-Omni
 
 ## Installation
 
@@ -194,7 +194,18 @@ Before takeoff:
 2. `roslaunch aerial_robot_base joy_stick.launch robot_name:=beetle1`
 3. `rviz -d ~/ros1/jsk_ws/src/jsk_aerial_robot_dev/robots/beetle/config/nmpc.rviz`
 
-**Visual Computer**
+**Transform command**
 
-1. `rosrun aerial_robot_planning visual_fb_mode.py`
-2. Adjust the window to fullfill the screen.
+1. `rosrun aerial_robot_planning amb_trans.py len=50` 
+2. len is ranging from 0 to 100, corresponding to negative max and positive max.
+
+***Transformed Valve turning***
+1. `rosrun aerial_robot_planning rotation_mpc.py beetle1 loop_num=1` 
+2. default is a wall parallel to the y axis of the robot self frame
+   
+**Overactuated command flight**
+1. set flight  pos`rosrun aerial_robot_planning agg_state.py robot_name=beetle1 roll=90 pitch=0 yaw=nan` (roll=90d eg)
+2. then `roslaunch aerial_robot_base joy_stick.launch robot_name:=beetle1` or `rosrun aerial_robot_base keyboard_command.py`
+   
+    *in this mode, yaw of the command is disabled.*
+3. when send `l` landing, will automatically go  to 0 roll and 0 pitch 

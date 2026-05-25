@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # rosrun aerial_robot_planning agg_state.py robot_name=beetle1 roll=90 pitch=0 yaw=nan
+# aggressive state for amoeba
 import math
 import re
 import sys
@@ -7,6 +8,7 @@ import threading
 
 import rospy
 import tf_conversions as tf
+from aerial_robot_msgs.msg import FlightNav
 from geometry_msgs.msg import Quaternion, Transform, Twist, Vector3
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Joy
@@ -65,6 +67,9 @@ class AggStateNode:
         self.enable_joy_yaw = rospy.get_param("~enable_joy_yaw", False)
         self.flatten_land_tol = rospy.get_param("~flatten_land_tol", 0.08)
         self.flatten_land_hold = rospy.get_param("~flatten_land_hold", 0.5)
+        self.soft_land_rate = rospy.get_param("~soft_land_rate", 0.08)
+        self.soft_land_z = rospy.get_param("~soft_land_z", 0.15)
+        self.soft_land_hold = rospy.get_param("~soft_land_hold", 0.5)
 
         self.t_step = rospy.get_param(f"/{self.robot_name}/controller/nmpc/T_step", 0.1)
         self.n_nmpc = rospy.get_param(f"/{self.robot_name}/controller/nmpc/NN", 20)
@@ -77,7 +82,9 @@ class AggStateNode:
         self.last_time = None
         self.active = True
         self.landing_requested = False
+        self.landing_descent_started = False
         self.flatten_reached_since = None
+        self.soft_land_reached_since = None
         self.lock = threading.Lock()
 
         self.roll_param = rospy.get_param("~roll", self.cli_args.get("roll", "nan"))
@@ -88,6 +95,8 @@ class AggStateNode:
         self.land_pub = rospy.Publisher(f"/{self.robot_name}/teleop_command/land", Empty, queue_size=1)
         self.odom_sub = rospy.Subscriber(f"/{self.robot_name}/uav/cog/odom", Odometry, self.odom_cb, queue_size=1)
         self.joy_sub = rospy.Subscriber(f"/{self.robot_name}/joy", Joy, self.joy_cb, queue_size=1)
+        self.nav_sub = rospy.Subscriber(f"/{self.robot_name}/uav/nav", FlightNav, self.nav_cb, queue_size=1)
+        self.land_req_sub = rospy.Subscriber(f"/{self.robot_name}/agg_state/land", Empty, self.land_request_cb, queue_size=1)
 
         self.input_thread = threading.Thread(target=self.stdin_loop)
         self.input_thread.daemon = True
@@ -129,6 +138,28 @@ class AggStateNode:
     def joy_cb(self, msg):
         with self.lock:
             self.last_joy = msg
+
+    def nav_cb(self, msg):
+        with self.lock:
+            if self.target_pos is None or self.target_rpy is None:
+                return
+
+            if msg.pos_xy_nav_mode in (FlightNav.POS_MODE, FlightNav.POS_VEL_MODE):
+                self.target_pos[0] = msg.target_pos_x
+                self.target_pos[1] = msg.target_pos_y
+
+            if msg.pos_z_nav_mode in (FlightNav.POS_MODE, FlightNav.POS_VEL_MODE):
+                self.target_pos[2] = msg.target_pos_z
+            elif msg.pos_z_nav_mode == FlightNav.VEL_MODE:
+                self.target_pos[2] += msg.target_pos_diff_z
+
+            if msg.yaw_nav_mode in (FlightNav.POS_MODE, FlightNav.POS_VEL_MODE):
+                self.target_rpy[2] = msg.target_yaw
+
+            self.active = True
+
+    def land_request_cb(self, _msg):
+        self.request_soft_land()
 
     def param_angle_or_current(self, value, current):
         try:
@@ -187,13 +218,7 @@ class AggStateNode:
                 rospy.signal_shutdown("agg_state quit command")
                 return
             if line in ("l", "land"):
-                with self.lock:
-                    if self.target_rpy is not None:
-                        self.target_rpy[0] = 0.0
-                        self.target_rpy[1] = 0.0
-                    self.landing_requested = True
-                    self.flatten_reached_since = None
-                rospy.logwarn("Landing requested: flattening roll/pitch before publishing land command.")
+                self.request_soft_land()
                 continue
 
             updates = self.parse_rpy_command(line)
@@ -208,8 +233,22 @@ class AggStateNode:
                 for idx, value in updates.items():
                     self.target_rpy[idx] = self.to_rad(value)
                 self.landing_requested = False
+                self.landing_descent_started = False
+                self.soft_land_reached_since = None
                 self.active = True
             rospy.loginfo("Updated target rpy command: %s", line)
+
+    def request_soft_land(self):
+        with self.lock:
+            if self.target_rpy is not None:
+                self.target_rpy[0] = 0.0
+                self.target_rpy[1] = 0.0
+            self.landing_requested = True
+            self.landing_descent_started = False
+            self.flatten_reached_since = None
+            self.soft_land_reached_since = None
+            self.active = True
+        rospy.logwarn("Landing requested: flattening roll/pitch, then descending with agg_state trajectory.")
 
     def parse_rpy_command(self, line):
         mapping = {"roll": 0, "r": 0, "pitch": 1, "p": 1, "yaw": 2, "y": 2}
@@ -273,7 +312,7 @@ class AggStateNode:
 
         return traj
 
-    def maybe_land(self, now):
+    def maybe_land(self, now, dt):
         if not self.landing_requested:
             return
 
@@ -293,10 +332,33 @@ class AggStateNode:
         if now.to_sec() - self.flatten_reached_since < self.flatten_land_hold:
             return
 
+        self.landing_descent_started = True
+        self.target_pos[2] = max(self.soft_land_z, self.target_pos[2] - self.soft_land_rate * dt)
+
+        if self.last_odom is None:
+            return
+
+        current_z = self.last_odom.pose.pose.position.z
+        if self.target_pos[2] > self.soft_land_z or current_z > self.soft_land_z + 0.08:
+            self.soft_land_reached_since = None
+            return
+
+        if self.soft_land_reached_since is None:
+            self.soft_land_reached_since = now.to_sec()
+            return
+
+        if now.to_sec() - self.soft_land_reached_since < self.soft_land_hold:
+            return
+
         self.active = False
         self.landing_requested = False
+        self.landing_descent_started = False
         self.land_pub.publish(Empty())
-        rospy.logwarn("agg_state flattened. Published /%s/teleop_command/land and stopped /set_ref_traj.", self.robot_name)
+        rospy.logwarn(
+            "agg_state soft-landed to z=%.2f. Published /%s/teleop_command/land and stopped /set_ref_traj.",
+            self.soft_land_z,
+            self.robot_name,
+        )
 
     def spin(self):
         rate = rospy.Rate(self.rate_hz)
@@ -309,10 +371,11 @@ class AggStateNode:
                     else:
                         dt = max(0.0, min(0.1, (now - self.last_time).to_sec()))
 
-                    self.update_target_from_joy(dt)
+                    if not self.landing_requested:
+                        self.update_target_from_joy(dt)
                     self.step_towards_rpy(dt)
+                    self.maybe_land(now, dt)
                     self.traj_pub.publish(self.build_traj(now))
-                    self.maybe_land(now)
                     self.last_time = now
 
             rate.sleep()

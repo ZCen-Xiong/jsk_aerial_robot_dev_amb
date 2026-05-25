@@ -204,8 +204,9 @@ Before takeoff:
 2. default is a wall parallel to the y axis of the robot self frame
    
 **Overactuated command flight**
-1. set flight  pos`rosrun aerial_robot_planning agg_state.py robot_name=beetle1 roll=90 pitch=0 yaw=nan` (roll=90d eg)
-2. then `roslaunch aerial_robot_base joy_stick.launch robot_name:=beetle1` or `rosrun aerial_robot_base keyboard_command.py`
+1. then `roslaunch aerial_robot_base joy_stick.launch robot_name:=beetle1` or `rosrun aerial_robot_base keyboard_command.py` take off 
+2. in 2nd terminal set flight  pos`rosrun aerial_robot_planning agg_state.py robot_name=beetle1` 
+3. in 2nd terminal then goes ` roll=90 pitch=0 yaw=nan` (roll=90d eg)
    
     *in this mode, yaw of the command is disabled.*
-3. when send `l` landing, will automatically go  to 0 roll and 0 pitch 
+4. when send `l` landing, will automatically go  to 0 roll and 0 pitch 

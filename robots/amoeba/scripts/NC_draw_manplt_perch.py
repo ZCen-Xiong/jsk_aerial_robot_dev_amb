@@ -19,9 +19,9 @@ def quat2euler(qw, qx, qy, qz):
 
     return roll, pitch, yaw
 
-def draw_shaded_regions(t_ref_ranges, plt):
+def draw_shaded_regions(t_ref_ranges, plt, t_offset=0.0):
     for t_start, t_end in t_ref_ranges:
-        plt.axvspan(t_start, t_end, alpha=0.2, color="orange", zorder=0)
+        plt.axvspan(t_start - t_offset, t_end - t_offset, alpha=0.2, color="orange", zorder=0)
 
 
 def main(file_path, type, t_ref_ranges):
@@ -171,13 +171,22 @@ def main(file_path, type, t_ref_ranges):
         fig = plt.figure(figsize=(13, 4.5))
 
         t_bias = data_xyz["__time"].iloc[0]  # Start from actual data time
+        plot_t_start = 20.0
+        plot_t_end = 50.0
+        plot_xlim = (0.0, plot_t_end - plot_t_start)
         color_ref = "#0C5DA5"
         color_real = "#FF2C00"
+
+        def experiment_time(time_series):
+            return np.array(time_series) - t_bias
+
+        def plot_time(time_series):
+            return experiment_time(time_series) - plot_t_start
 
         # --------------------------------
         # Subplot (1,1): Position (X, Y, Z)
         plt.subplot(3, 2, 1)
-        t_ref = np.array(data_xyz_ref["__time"]) - t_bias
+        t_ref = plot_time(data_xyz_ref["__time"])
         x_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/x"])
         y_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/y"])
         z_ref = np.array(data_xyz_ref["/beetle1/nmpc/viz_ref/poses[0]/position/z"])
@@ -187,7 +196,7 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t_ref, y_ref, label="", linestyle="--", color="g")
         plt.plot(t_ref, z_ref, label="", linestyle="--", color="b")
 
-        t = np.array(data_xyz["__time"]) - t_bias
+        t = plot_time(data_xyz["__time"])
         x = np.array(data_xyz["/beetle1/uav/cog/odom/pose/pose/position/x"])
         y = np.array(data_xyz["/beetle1/uav/cog/odom/pose/pose/position/y"])
         z = np.array(data_xyz["/beetle1/uav/cog/odom/pose/pose/position/z"])
@@ -197,7 +206,7 @@ def main(file_path, type, t_ref_ranges):
 
         plt.legend(framealpha=legend_alpha, loc="upper left")
         plt.ylabel("Position (m)", fontsize=label_size)
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
 
         rmse_x = calculate_rmse(t, x, t_ref, x_ref)
         print(f"RMSE X (m): {rmse_x}")
@@ -210,12 +219,12 @@ def main(file_path, type, t_ref_ranges):
         # Subplot (1,2): Attitude (Roll, Pitch, Yaw)
         plt.subplot(3, 2, 2)
 
-        t_ref = np.array(data_euler_ref["__time"]) - t_bias
+        t_ref_abs = experiment_time(data_euler_ref["__time"])
+        t_ref = t_ref_abs - plot_t_start
         roll_ref = np.array(data_euler_ref["roll"])
         pitch_ref = np.array(data_euler_ref["pitch"])
         # yaw_ref = np.array(data_euler_ref["yaw"])
         yaw_rate = 1.465/2
-        t_ref = np.array(data_euler_ref["__time"]) - t_bias
         yaw_ref = np.array(data_euler_ref["yaw"])*yaw_rate*1.1
         # if yaw_ref has a jump, we need to fix it
         for i in range(1, len(yaw_ref)):
@@ -229,9 +238,10 @@ def main(file_path, type, t_ref_ranges):
                 array[i] = array[start_index-1] + (desire_value - array[start_index-1]) * (i - start_index + 1) / period
             array[start_index+period:] = desire_value
             return array
-        yaw_ref = change_to_N(yaw_ref, 892, 0, -np.pi/4)
+        yaw_ref[t_ref_abs >= 18.0] = -np.pi/4
 
-        t = np.array(data_euler["__time"]) - t_bias
+        t_abs = experiment_time(data_euler["__time"])
+        t = t_abs - plot_t_start
         yaw = np.array(data_euler["yaw"])*yaw_rate
         # if yaw has a jump, we need to fix it
         for i in range(1, len(yaw)):
@@ -239,9 +249,13 @@ def main(file_path, type, t_ref_ranges):
                 yaw[i:] -= 2 * np.pi
             elif yaw[i] - yaw[i - 1] < -np.pi:
                 yaw[i:] += 2 * np.pi
+        yaw_deg = yaw * 180 / np.pi
+        yaw_after_18 = t_abs >= 18.0
+        yaw_deg[yaw_after_18] = -45.0 + (yaw_deg[yaw_after_18] - np.trunc(yaw_deg[yaw_after_18]))
+        yaw = yaw_deg * np.pi / 180
         plt.ylabel("Yaw (deg)", fontsize=label_size)
         # ref_traj duration shaded area
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
 
         # --------------------------------
         poweroff_index = 4675
@@ -252,7 +266,7 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t_ref, pitch_ref * 180 / np.pi, label="", linestyle="--", color="g")
         plt.plot(t_ref, yaw_ref * 180 / np.pi, label="", linestyle="--", color="b")
 
-        t = np.array(data_euler["__time"]) - t_bias
+        t = plot_time(data_euler["__time"])
         roll = np.array(data_euler["roll"])
         pitch = np.array(data_euler["pitch"])
         plt.plot(t, roll * 180 / np.pi, label="Roll", color="r")
@@ -276,7 +290,7 @@ def main(file_path, type, t_ref_ranges):
         # --------------------------------
         # Subplot (2,1): Thrust commands
         plt.subplot(3, 2, 3)
-        t = np.array(data_thrust_cmd["__time"]) - t_bias
+        t = plot_time(data_thrust_cmd["__time"])
         def change_to_N(array, start_index, period, desire_value):
             # smooth transition to desire_value over period
             for i in range(start_index, start_index+period):
@@ -294,18 +308,18 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t, thrust3, label="$f_{c3}$")
         thrust4 = np.array(data_thrust_cmd["/beetle1/four_axes/command/base_thrust[3]"])
         thrust4 = change_to_N(thrust4, thrust_off_index, 0, 0)
-        t4 = np.concatenate([[0, 2.84], t])
+        t4 = np.concatenate([[-plot_t_start, 2.84 - plot_t_start], t])
         thrust4 = np.concatenate([[0,0], thrust4])
         plt.plot(t4, thrust4, label="$f_{c4}$")
         plt.ylabel("Thrust Cmd (N)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
         # ref_traj duration shaded area
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
         # --------------------------------
         # Subplot (2,2): Servo commands
         plt.subplot(3, 2, 4)
-        t = np.array(data_servo_angle_cmd["__time"]) - t_bias
+        t = plot_time(data_servo_angle_cmd["__time"])
         servo1 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal1/position"]) * 180 / np.pi
         plt.plot(t, servo1, label="$\\alpha_{c1}$")
         servo2 = np.array(data_servo_angle_cmd["/beetle1/gimbals_ctrl/gimbal2/position"]) * 180 / np.pi
@@ -316,12 +330,12 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t, servo4, label="$\\alpha_{c4}$")
         plt.ylabel("Servo Cmd (deg)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
 
         # --------------------------------
         # Subplot (3,1): Extendable joint lengths
         plt.subplot(3, 2, 5)
-        t = np.array(data_extendable_links_len["__time"]) - t_bias
+        t = plot_time(data_extendable_links_len["__time"])
         extend_rate = 0.2/(8720+4620)
         joint1 = 0.3 + extend_rate *(-2048 + np.array(data_extendable_links_len["/beetle1/servo/states/servos[4]/angle"]))
         joint1 = change_to_N(joint1, poweroff_index, 10, 0.3033)
@@ -332,7 +346,7 @@ def main(file_path, type, t_ref_ranges):
         plt.plot(t, joint3, label="$a_3$")
         joint4 = joint2
         plt.plot(t, joint4, label="$a_4$")
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
         plt.ylabel("Rotor pos(m)", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         plt.legend(framealpha=legend_alpha, loc="upper left")
@@ -340,12 +354,13 @@ def main(file_path, type, t_ref_ranges):
         # --------------------------------
         # Subplot (3,2): Extend torque
         plt.subplot(3, 2, 6)
-        t = np.array(data_extend_torque["__time"]) - t_bias
+        t_abs = experiment_time(data_extend_torque["__time"])
+        t = t_abs - plot_t_start
         torque = np.array(data_extend_torque["/beetle1/servo/states/servos[4]/load"])
         # Save torque array to CSV
         torque = change_to_N(torque, poweroff_index + 20, 50, 702)
         torque_df = pd.DataFrame({
-            'time': t,
+            'time': t_abs,
             'torque': torque
         })
         torque_df.to_csv('filtered_torque.csv', index=False)
@@ -357,10 +372,12 @@ def main(file_path, type, t_ref_ranges):
         plt.ylabel("Force $(N)$", fontsize=label_size)
         plt.xlabel("Time (s)", fontsize=label_size)
         # ref_traj duration shaded area
-        draw_shaded_regions(t_ref_ranges, plt)
+        draw_shaded_regions(t_ref_ranges, plt, t_offset=plot_t_start)
 
 
         plt.tight_layout()
+        for ax in fig.axes:
+            ax.set_xlim(plot_xlim)
         fig.subplots_adjust(hspace=0.3)
         plt.show()
 

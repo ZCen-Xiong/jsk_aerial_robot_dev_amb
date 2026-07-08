@@ -123,7 +123,7 @@ A frequent problem is the handling of the jobservers in the build process. When 
 ### 1. Start the simulation
 Run the simulation with the following command:
 ```bash
-roslaunch beetle_omni bringup_nmpc_omni.launch real_machine:=false simulation:=True headless:=False nmpc_mode:=0
+roslaunch amoeba bringup_nmpc_omni.launch real_machine:=false simulation:=True headless:=False nmpc_mode:=0 batter:=1
 ```
 ### 2. Start the keyboard script
 Run the keyboard with the following command:
@@ -147,6 +147,11 @@ For using wrench sensor, call the following command in hovering to calibrate the
 ```bash
 rosservice call /cfs_sensor_calib "{}"
 ```
+in case your launch don't have the sensor launch, it's:
+```bash
+roslaunch cfs_sensor cfs_sensor.launch type:=PFS055YA501U6 port:=dev/
+```
+
 
 # Flying Hand
 

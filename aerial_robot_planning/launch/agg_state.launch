@@ -5,10 +5,11 @@
   <arg name="pitch" default="0.0" />
   <arg name="yaw" default="nan" />
   <arg name="angle_unit" default="deg" />
-  <arg name="enable_joy_yaw" default="false" />
+  <arg name="enable_joy_yaw" default="true" />
   <arg name="max_angle_rate" default="0.35" />
   <arg name="max_xy_vel" default="0.3" />
   <arg name="max_z_vel" default="0.15" />
+  <arg name="max_yaw_rate" default="0.4" />
 
   <node pkg="aerial_robot_planning" type="agg_state.py" name="agg_state" output="screen">
     <param name="robot_name" value="$(arg robot_name)" />
@@ -20,5 +21,6 @@
     <param name="max_angle_rate" value="$(arg max_angle_rate)" />
     <param name="max_xy_vel" value="$(arg max_xy_vel)" />
     <param name="max_z_vel" value="$(arg max_z_vel)" />
+    <param name="max_yaw_rate" value="$(arg max_yaw_rate)" />
   </node>
 </launch>

@@ -3,7 +3,7 @@ import numpy as np
 import scienceplots
 import matplotlib.pyplot as plt
 import argparse
-
+# usage: python NC_draw_manplt.py ../../../corridor.csv --type 0
 legend_alpha = 0.5
 
 

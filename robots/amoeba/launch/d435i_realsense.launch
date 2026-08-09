@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_ns" default="beetle1" />
+  <arg name="camera_name" default="d435i" />
+  <arg name="serial_no" default="" />
+
+  <group ns="$(arg robot_ns)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="camera" value="$(arg camera_name)" />
+      <arg name="serial_no" value="$(arg serial_no)" />
+      <arg name="align_depth" value="true" />
+      <arg name="enable_pointcloud" value="true" />
+      <arg name="publish_tf" value="false" />
+      <arg name="tf_prefix" value="$(arg robot_ns)" />
+    </include>
+  </group>
+</launch>

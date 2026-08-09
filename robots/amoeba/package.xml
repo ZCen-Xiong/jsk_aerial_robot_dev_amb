@@ -29,6 +29,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

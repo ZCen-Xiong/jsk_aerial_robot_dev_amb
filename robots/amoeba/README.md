@@ -143,6 +143,42 @@ Then choose the trajectory you want the drone to perform.
 
 Most commands are the same with simulation.
 
+### D435i / vision startup
+
+These commands assume that the ROS-O environment and this workspace are already sourced by the shell startup files.
+On the current development PC, this is handled in `~/.zshrc` / `~/.bashrc`.
+
+To launch only the D435i camera:
+
+```bash
+roslaunch amoeba d435i_realsense.launch serial_no:=408322071091
+```
+
+To view the RGB image in another terminal:
+
+```bash
+rqt_image_view /beetle1/d435i/color/image_raw
+```
+
+To view the raw depth image:
+
+```bash
+rqt_image_view /beetle1/d435i/depth/image_rect_raw
+```
+
+The main published image/depth topics are:
+
+```bash
+rostopic list | grep /beetle1/d435i
+```
+
+To launch the real-machine NMPC bringup with D435i vision enabled:
+
+```bash
+roslaunch amoeba bringup_nmpc_omni.launch real_machine:=true simulation:=false enable_d435i:=true nmpc_mode:=0 battery:=1
+```
+### Force Sensor
+
 For using wrench sensor, call the following command in hovering to calibrate the wrench sensor:
 ```bash
 rosservice call /cfs_sensor_calib "{}"

@@ -3,17 +3,19 @@
   ###########  launch config  ###########
   <arg name="headless" default="False" />
   <arg name="config_dir" default="$(find amoeba)/config"/>
+  <arg name="rviz_config" default="$(arg config_dir)/rviz/nmpc.rviz" />
   <arg name="robot_id" default="1" />
   <arg name="robot_ns" value="beetle$(arg robot_id)" />
   <arg name="end_effector" default="none"/>  <!-- "ball", "fork", "brush", "sensor_ball"   -->
+  <arg name="enable_d435i" default="false"/>
 
   ###########  Robot Model  ###########
   <include file="$(find aerial_robot_model)/launch/aerial_robot_model.launch" >
     <arg name="headless" value="$(arg headless)" />
     <arg name="robot_model" value="$(find amoeba)/robots/amoeba.urdf.xacro"/>
-    <arg name="model_options" value="end_effector:=$(arg end_effector)"/>
+    <arg name="model_options" value="end_effector:=$(arg end_effector) enable_d435i:=$(arg enable_d435i)"/>
     <arg name="robot_ns" value="$(arg robot_ns)" />
-    <arg name="rviz_config" value="$(arg config_dir)/rviz/nmpc.rviz" />
+    <arg name="rviz_config" value="$(arg rviz_config)" />
     <arg name="rviz_init_pose" value="$(arg config_dir)/rviz/RvizInit.yaml" />
     <arg name="need_joint_state" value="true" />
   </include >

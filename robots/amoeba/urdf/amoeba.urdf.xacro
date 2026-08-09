@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="beetle_link" >
 
+  <xacro:include filename="$(find amoeba)/urdf/sensors/d435i.xacro" />
+
   <xacro:macro name="beetle_center_link" params="child1 child2 child3 child4">
     ## dummy
     <link name="root"/>
@@ -288,7 +290,9 @@
 <!-- Define beetle -->
   <xacro:arg name="robot_name" default="beetle-art-omni" />
   <xacro:arg name="battery" default="0" />
+  <xacro:arg name="enable_d435i" default="false" />
   <xacro:property name="battery" value="$(arg battery)" />
+  <xacro:property name="enable_d435i" value="$(arg enable_d435i)" />
 
   <xacro:beetle_center_link child1="1" child2="2" child3="3" child4="4"/>
   <xacro:beetle_thrust_link self="1" rotor_direction="1"/>
@@ -311,6 +315,14 @@
     <child link="end"/>
     <origin xyz="0 0 0.106" rpy="0 0 0"/>
   </joint>
+
+  <xacro:if value="${enable_d435i}">
+    <xacro:d435i_depth_camera
+        parent_link="main_body"
+        robot_ns="$(arg robot_name)"
+        xyz="-0.02 -0.02 0.106"
+        rpy="0 ${-pi * 9.0 / 180.0} ${pi * 5.0 / 4.0}"/>
+  </xacro:if>
 
   <!-- Conditionally create the fork or ball link based on the parameter value -->
   <xacro:if value="${end_effector == 'fork'}">

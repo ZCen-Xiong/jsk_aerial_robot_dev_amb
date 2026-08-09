@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<robot name="d435i_depth_camera_sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="d435i_depth_camera" params="parent_link robot_ns xyz rpy">
+    <link name="d435i_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.072"/>
+        <inertia
+            ixx="0.000010" ixy="0.0" ixz="0.0"
+            iyy="0.000050" iyz="0.0"
+            izz="0.000050"/>
+      </inertial>
+      <visual>
+        <origin xyz="0.0125 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.025 0.090 0.025"/>
+        </geometry>
+        <material name="d435i_body">
+          <color rgba="0.12 0.12 0.12 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0.0125 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.025 0.090 0.025"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="d435i_mount_joint" type="fixed">
+      <parent link="${parent_link}"/>
+      <child link="d435i_link"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <link name="d435i_depth_frame">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.00001"/>
+        <inertia
+            ixx="0.000001" ixy="0.0" ixz="0.0"
+            iyy="0.000001" iyz="0.0"
+            izz="0.000001"/>
+      </inertial>
+    </link>
+
+    <joint name="d435i_depth_joint" type="fixed">
+      <parent link="d435i_link"/>
+      <child link="d435i_depth_frame"/>
+      <origin xyz="0.0125 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- REP-103 optical frame: x right, y down, z forward. -->
+    <link name="d435i_depth_optical_frame">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.00001"/>
+        <inertia
+            ixx="0.000001" ixy="0.0" ixz="0.0"
+            iyy="0.000001" iyz="0.0"
+            izz="0.000001"/>
+      </inertial>
+    </link>
+
+    <joint name="d435i_depth_optical_joint" type="fixed">
+      <parent link="d435i_depth_frame"/>
+      <child link="d435i_depth_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-pi / 2.0} 0 ${-pi / 2.0}"/>
+    </joint>
+
+    <gazebo reference="d435i_depth_frame">
+      <sensor type="depth" name="d435i_depth_camera">
+        <always_on>true</always_on>
+        <update_rate>30.0</update_rate>
+        <visualize>true</visualize>
+        <camera name="d435i_depth">
+          <!-- Gazebo Classic derives vertical FOV from this HFOV and the image aspect ratio. -->
+          <horizontal_fov>${87.0 * pi / 180.0}</horizontal_fov>
+          <image>
+            <width>848</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.10</near>
+            <far>10.0</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.003</stddev>
+          </noise>
+        </camera>
+
+        <plugin name="d435i_depth_plugin" filename="libgazebo_ros_openni_kinect.so">
+          <robotNamespace>${robot_ns}</robotNamespace>
+          <baseline>0.05</baseline>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>30.0</updateRate>
+          <cameraName>d435i</cameraName>
+          <imageTopicName>color/image_raw</imageTopicName>
+          <cameraInfoTopicName>color/camera_info</cameraInfoTopicName>
+          <depthImageTopicName>depth/image_rect_raw</depthImageTopicName>
+          <depthImageInfoTopicName>depth/camera_info</depthImageInfoTopicName>
+          <pointCloudTopicName>depth/color/points</pointCloudTopicName>
+          <frameName>${robot_ns}/d435i_depth_optical_frame</frameName>
+          <pointCloudCutoff>0.10</pointCloudCutoff>
+          <pointCloudCutoffMax>10.0</pointCloudCutoffMax>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+          <CxPrime>0.0</CxPrime>
+          <Cx>0.0</Cx>
+          <Cy>0.0</Cy>
+          <focalLength>0.0</focalLength>
+          <hackBaseline>0.0</hackBaseline>
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

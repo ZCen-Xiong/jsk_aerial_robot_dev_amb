@@ -4,6 +4,7 @@
   <arg name="simulation" default="false" />
   <arg name="robot_ns" default="gimbalrotor" />
   <arg name="robot_id" default="1" />
+  <arg name="enable_d435i" default="false" />
   <group ns="$(arg robot_ns)">
 
     <group if="$(arg real_machine)">
@@ -14,6 +15,7 @@
           <arg name="serial_port" value="/dev/flight_controller" />
           <arg name="serial_baud" value="921600" />
         </include>
+
       </group>
 
       <!-- mocap -->
@@ -26,5 +28,10 @@
     <rosparam file="$(find beetle)/config/sensors/imu/spinal.yaml" command="load" />
     <rosparam file="$(find aerial_robot_base)/config/sensors/mocap.yaml" command="load" />
   </group>
+
+  <include file="$(find amoeba)/launch/d435i_realsense.launch"
+           if="$(eval arg('real_machine') and not arg('simulation') and arg('enable_d435i'))">
+    <arg name="robot_ns" value="$(arg robot_ns)" />
+  </include>
 
 </launch>

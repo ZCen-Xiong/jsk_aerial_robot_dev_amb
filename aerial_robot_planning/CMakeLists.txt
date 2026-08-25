@@ -14,7 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
         nav_msgs
         sensor_msgs
         visualization_msgs
+        aerial_robot_model
         aerial_robot_msgs
+        spinal
         rqt_gui_py
 )
 
@@ -166,6 +168,7 @@ include_directories(
  catkin_install_python(PROGRAMS
    scripts/rotation_mpc.py
    scripts/amb_trans.py   
+   scripts/amb_box.py
    scripts/trans_mpc.py
    scripts/mpc_smach_node.py
    scripts/glove_control_pub.py

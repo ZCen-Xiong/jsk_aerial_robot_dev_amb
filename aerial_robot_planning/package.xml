@@ -14,6 +14,10 @@
   <!-- Build dependencies -->
   <build_depend>rospy</build_depend>
   <build_depend>rosparam</build_depend>
+  <build_depend>aerial_robot_model</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>spinal</build_depend>
   <build_depend>rqt_gui</build_depend>
   <build_depend>rqt_gui_py</build_depend>
   <build_depend>python_qt_binding</build_depend>
@@ -21,6 +25,10 @@
   <!-- Run-time dependencies -->
   <exec_depend>rospy</exec_depend>
   <exec_depend>rosparam</exec_depend>
+  <exec_depend>aerial_robot_model</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>spinal</exec_depend>
   <exec_depend>rqt_gui</exec_depend>
   <exec_depend>rqt_gui_py</exec_depend>
   <exec_depend>python_qt_binding</exec_depend>

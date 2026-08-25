@@ -23,9 +23,10 @@ from sensor_msgs.msg import JointState
 
 class ServoMoveNode:
 
-    def __init__(self):
+    def __init__(self, init_node=True):
         # print(f'amoeba_deform_initiate')
-        rospy.init_node('servo_move', anonymous=True)
+        if init_node:
+            rospy.init_node('servo_move', anonymous=True)
         self.servo_index = 0
         self.servo_angle = 0.0
         self.servo_temp = 0

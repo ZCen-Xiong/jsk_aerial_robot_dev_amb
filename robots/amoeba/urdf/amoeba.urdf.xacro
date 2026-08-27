@@ -189,11 +189,20 @@
     #### rotor parent link (virtual) ####
     <link name="gimbal_link${self}">
       <inertial>
-        <origin xyz="0.07576614 0.00018422 0.00143736" rpy="0 0 0"/>
-        <mass value="0.17880658"/>
-        <inertia
-            ixx =" 0.00019959" iyy =" 0.00028405" izz =" 0.00038626" 
-            ixy =" -0.00000220" ixz = "0.00000178" iyz ="-0.00000004"/>
+        <xacro:if value="${self == 1 or self == 3}">
+          <origin xyz="0.07576614 0.00018422 0.00143736" rpy="0 0 0"/>
+          <mass value="0.17880658"/>
+          <inertia
+              ixx =" 0.00019959" iyy =" 0.00028405" izz =" 0.00038626"
+              ixy =" -0.00000220" ixz = "0.00000178" iyz ="-0.00000004"/>
+        </xacro:if>
+        <xacro:if value="${self == 2 or self == 4}">
+          <origin xyz="0.08674561 -0.00074 0.04888743" rpy="0 0 0"/>
+          <mass value="0.22136000"/>
+          <inertia
+              ixx ="0.00094603" iyy ="0.00281080" izz ="0.00276983"
+              ixy ="-0.00001486" ixz ="0.00026438" iyz ="-0.00000586"/>
+        </xacro:if>
       </inertial>
       <collision>
         <origin xyz="0.06 0 0" rpy="0 0 0"/>

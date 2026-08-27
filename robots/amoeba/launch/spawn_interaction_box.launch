@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="model_name" default="interaction_box" />
+  <arg name="x" default="2.0" />
+  <arg name="y" default="0.0" />
+  <arg name="z" default="0.25" />
+  <arg name="roll" default="0.0" />
+  <arg name="pitch" default="0.0" />
+  <arg name="yaw" default="0.0" />
+
+  <node
+    pkg="gazebo_ros"
+    type="spawn_model"
+    name="spawn_$(arg model_name)"
+    output="screen"
+    args="-sdf -file $(find amoeba)/gazebo_model/model/interaction_box/model.sdf -model $(arg model_name) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)" />
+</launch>

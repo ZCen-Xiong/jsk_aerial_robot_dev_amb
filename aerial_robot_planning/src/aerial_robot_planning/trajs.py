@@ -101,6 +101,7 @@ class LemniscateTraj(BaseTraj):
         self.z_range = 0.2  # range of z
         self.T = 30  # period in seconds
         self.omega = 2 * np.pi / self.T  # angular velocity
+        self.z_origin = 1.0  # offset for z to keep it above ground
 
     def get_2d_pt(self, t: float) -> Tuple[float, float, float, float, float, float]:
         t = t + self.T / 4  # shift the phase to make the trajectory start at the origin
@@ -121,7 +122,7 @@ class LemniscateTraj(BaseTraj):
 
         x = self.a * np.cos(self.omega * t)
         y = self.a * np.sin(2 * self.omega * t) / 2
-        z = self.z_range * np.sin(2 * self.omega * t + np.pi / 2) + 1.0
+        z = self.z_range * np.sin(2 * self.omega * t + np.pi / 2) + self.z_origin
 
         vx = -self.a * self.omega * np.sin(self.omega * t)
         vy = 2 * self.a * self.omega * np.cos(2 * self.omega * t) / 2

@@ -524,12 +524,17 @@ void BaseNavigator::joyStickControl(const sensor_msgs::JoyConstPtr& joy_msg)
    {
      if (teleop_flag_)
      {
-       control_frame_ = WORLD_FRAME;
+       const double stick_x = joy_cmd.axes[PS3_AXIS_STICK_LEFT_LEFTWARDS];
+       const double stick_y = joy_cmd.axes[PS3_AXIS_STICK_LEFT_UPWARDS];
+       if (fabs(stick_x) > joy_xy_deadzone_ || fabs(stick_y) > joy_xy_deadzone_)
+       {
+         control_frame_ = WORLD_FRAME;
 
-       tf::Vector3 pos_cog = estimator_->getPos(Frame::COG, estimate_mode_);
-       double vec = 0.1;
-       setTargetPosX(pos_cog.x() - joy_cmd.axes[PS3_AXIS_STICK_LEFT_LEFTWARDS] * vec);
-       setTargetPosY(pos_cog.y() + joy_cmd.axes[PS3_AXIS_STICK_LEFT_UPWARDS] * vec);
+         tf::Vector3 pos_cog = estimator_->getPos(Frame::COG, estimate_mode_);
+         double vec = 0.1;
+         setTargetPosX(pos_cog.x() - stick_x * vec);
+         setTargetPosY(pos_cog.y() + stick_y * vec);
+       }
      }
      break;
    }
@@ -904,6 +909,7 @@ void BaseNavigator::rosParamInit()
   //*** teleop navigation
   getParam<double>(nh, "joy_target_vel_interval", joy_target_vel_interval_, 0.0);
   getParam<double>(nh, "joy_target_z_interval", joy_target_z_interval_, 0.0);
+  getParam<double>(nh, "joy_xy_deadzone", joy_xy_deadzone_, 0.05);
   getParam<double>(nh, "joy_z_deadzone", joy_z_deadzone_, 0.2);
   getParam<double>(nh, "joy_yaw_deadzone", joy_yaw_deadzone_, 0.2);
   getParam<double>(nh, "joy_stick_heart_beat_du", joy_stick_heart_beat_du_, 2.0);

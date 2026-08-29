@@ -319,6 +319,7 @@ protected:
   double max_target_tilt_angle_;
   double max_target_yaw_rate_;
 
+  double joy_xy_deadzone_;
   double joy_z_deadzone_;
   double joy_yaw_deadzone_;
 

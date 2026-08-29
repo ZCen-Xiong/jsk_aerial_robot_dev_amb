@@ -53,7 +53,7 @@ servo_controller:
     controller1:
       id: 5  # Physical servo id:4 controls all joints
       name: extendable_joint1
-      mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
+      mechanical_ratio: 1.0
       simulation:
         pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
@@ -62,7 +62,7 @@ servo_controller:
     controller2:
       id: 5  # Same physical servo id:4
       name: extendable_joint2
-      mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
+      mechanical_ratio: 1.0
       simulation:
         pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
@@ -71,7 +71,7 @@ servo_controller:
     controller3:
       id: 5  # Same physical servo id:4
       name: extendable_joint3
-      mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
+      mechanical_ratio: 1.0
       simulation:
         pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0
@@ -80,7 +80,7 @@ servo_controller:
     controller4:
       id: 5  # Same physical servo id:4
       name: extendable_joint4
-      mechanical_ratio: 1.0  # Simplified: let trans_mpc.py handle direction
+      mechanical_ratio: 1.0
       simulation:
         pid: {p: 300.0, i: 0.0, d: 30.0, i_clamp_max: 0.0, i_clamp_min: 0.0}
         init_value: 0

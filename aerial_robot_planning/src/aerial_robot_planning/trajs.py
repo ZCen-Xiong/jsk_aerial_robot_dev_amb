@@ -99,7 +99,7 @@ class LemniscateTraj(BaseTraj):
         super().__init__(loop_num)
         self.a = 0.8  # parameter determining the size of the Lemniscate
         self.z_range = 0.2  # range of z
-        self.T = 20  # period in seconds
+        self.T = 30  # period in seconds
         self.omega = 2 * np.pi / self.T  # angular velocity
 
     def get_2d_pt(self, t: float) -> Tuple[float, float, float, float, float, float]:
@@ -161,57 +161,7 @@ class LemniscateTrajYaw(LemniscateTraj):
 class LemniscateTrajOmni(LemniscateTraj):
     def __init__(self, loop_num) -> None:
         super().__init__(loop_num)
-        self.a_orientation = 0.5
-
-    def get_3d_orientation(
-        self, t: float
-    ) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
-        t = t + self.T * 1 / 4
-
-        roll = 0.0
-        pitch = 0.0
-        yaw = np.pi / 2 * np.sin(self.omega * t + np.pi) + np.pi / 2
-        (qx, qy, qz, qw) = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-
-        roll_rate = 0.0
-        pitch_rate = 0.0
-        yaw_rate = np.pi / 2 * self.omega * np.cos(self.omega * t + np.pi / 2)
-
-        roll_acc = 0.0
-        pitch_acc = 0.0
-        yaw_acc = -np.pi / 2 * self.omega ** 2 * np.sin(self.omega * t + np.pi / 2)
-
-        return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
-    
-class LemniscateTrajOmni(LemniscateTraj):
-    def __init__(self, loop_num) -> None:
-        super().__init__(loop_num)
-        self.a_orientation = 0.5
-
-    def get_3d_orientation(
-        self, t: float
-    ) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
-        t = t + self.T * 1 / 4
-
-        roll = 0.0
-        pitch = 0.0
-        yaw = np.pi / 2 * np.sin(self.omega * t + np.pi) + np.pi / 2
-        (qx, qy, qz, qw) = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-
-        roll_rate = 0.0
-        pitch_rate = 0.0
-        yaw_rate = np.pi / 2 * self.omega * np.cos(self.omega * t + np.pi / 2)
-
-        roll_acc = 0.0
-        pitch_acc = 0.0
-        yaw_acc = -np.pi / 2 * self.omega ** 2 * np.sin(self.omega * t + np.pi / 2)
-
-        return qw, qx, qy, qz, roll_rate, pitch_rate, yaw_rate, roll_acc, pitch_acc, yaw_acc
-    
-class LemniscateTrajOmni(LemniscateTraj):
-    def __init__(self, loop_num) -> None:
-        super().__init__(loop_num)
-        self.a_orientation = 0.5
+        self.a_orientation = np.pi/6
 
     def get_3d_orientation(
         self, t: float

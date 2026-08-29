@@ -86,11 +86,20 @@
       ## female extendable arm link 
       <link name="chain_link${id}">
         <inertial>
-          <origin xyz="-0.0679083 0.0000000 -0.0014430" rpy="0 0 0"/>
-          <mass value="0.1143400"/>
-          <inertia
-              ixx ="  0.0000329" iyy ="0.0003105" izz =" 0.0003140"
-              ixy =" 0.0000000" ixz ="-0.0000088" iyz =" 0.0000000"/>
+          <xacro:if value="${id == 1 or id == 3}">
+            <origin xyz=" -0.0673206 0.0000000 -0.0014430" rpy="0 0 0"/>
+            <mass value="0.1139600"/>
+            <inertia
+                ixx =" 0.0000325" iyy =" 0.0003041" izz =" 0.0003080"
+                ixy =" 0.0000000" ixz =" -0.0000087" iyz =" 0.0000000"/>
+          </xacro:if>
+          <xacro:if value="${id == 2 or id == 4}">
+            <origin xyz="-0.0565922 0.0000183 -0.0266963" rpy="0 0 0"/>
+            <mass value="0.1569763"/>
+            <inertia
+                ixx =" 0.0003726" iyy ="0.0006876" izz =" 0.0003903"
+                ixy =" 0.0000001" ixz ="-0.0001248" iyz ="-0.0000002"/>
+          </xacro:if>
         </inertial>
         <!-- the motor_case's limit pin is 87mm from the servo -->
         <collision>

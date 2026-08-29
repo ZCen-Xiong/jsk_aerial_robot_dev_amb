@@ -169,7 +169,6 @@ include_directories(
    scripts/rotation_mpc.py
    scripts/amb_trans.py   
    scripts/amb_box.py
-   scripts/trans_mpc.py
    scripts/mpc_smach_node.py
    scripts/glove_control_pub.py
    scripts/agg_state.py

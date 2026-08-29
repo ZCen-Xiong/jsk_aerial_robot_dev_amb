@@ -40,32 +40,6 @@ This document describes the coordinated changes made to properly reflect the rea
 
 **Safety**: Provides accurate simulation behavior and proper force/torque calculations.
 
-### 3. Control Script
-
-**File**: `/scripts/trans_mpc.py`
-
-**Changes**:
-- Completely refactored joint control logic to handle all four joints simultaneously
-- Replaced single-joint control with synchronized multi-joint control
-- Added `get_servo_positions()` method that returns coordinated positions for all joints
-- Implemented proper coupling ratios: `[1.0, -1.0, 1.0, -1.0]`
-- Enhanced logging to show motion of all joints
-- Updated documentation to reflect real hardware mechanism
-
-**Safety**: Ensures control commands match hardware capabilities and limitations.
-
-## Usage
-
-### Running the Control Script
-
-```bash
-# Default robot name (amoeba)
-rosrun aerial_robot_planning trans_mpc.py
-
-# Specific robot name
-rosrun aerial_robot_planning trans_mpc.py my_amoeba_robot
-```
-
 ### Expected Behavior
 
 During trajectory execution, you should observe:
@@ -103,7 +77,6 @@ Motion pattern: j1,j3→0.050m, j2,j4→-0.050m
 ### Unexpected Motion Pattern
 - Verify coupling ratios in Servo.yaml match hardware
 - Check mechanical reduction values in URDF
-- Confirm trans_mpc.py uses correct joint ordering
 
 ### Simulation Issues
 - Reload robot configuration after changing Servo.yaml or URDF

@@ -162,7 +162,7 @@ class LemniscateTrajYaw(LemniscateTraj):
 class LemniscateTrajOmni(LemniscateTraj):
     def __init__(self, loop_num) -> None:
         super().__init__(loop_num)
-        self.a_orientation = np.pi/6
+        self.a_orientation = np.pi/12
 
     def get_3d_orientation(
         self, t: float

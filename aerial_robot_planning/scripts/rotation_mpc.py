@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Rotation MPC script for aerial robot with continuous arm length control
-Usage: rosrun aerial_robot_planning rotation_mpc.py robot_name loop_num=2
+Usage: rosrun aerial_robot_planning rotation_mpc.py robot_name loop_num=2 deform=1
 
-Example: rosrun aerial_robot_planning rotation_mpc.py beetle1 loop_num=2
+Example: rosrun aerial_robot_planning rotation_mpc.py beetle1 loop_num=2 deform=1
 """
 
 import sys
@@ -33,6 +33,7 @@ def parse_arguments():
     parser.add_argument("robot_name", type=str, help="Robot name (e.g., beetle1)")
     
     loop_num = 1  # default value
+    deform = 1  # default: enable deformation
     
     # Parse loop argument from remaining sys.argv
     for arg in sys.argv[1:]:
@@ -42,12 +43,21 @@ def parse_arguments():
             except ValueError:
                 rospy.logerr(f"Failed to parse loop argument: {arg}")
                 loop_num = 1
+        elif arg.startswith("deform="):
+            try:
+                deform = int(arg.split("=", 1)[1])
+                if deform not in (0, 1):
+                    rospy.logerr(f"deform must be 0 or 1, got: {deform}")
+                    deform = 1
+            except ValueError:
+                rospy.logerr(f"Failed to parse deform argument: {arg}")
+                deform = 1
                 
     args = parser.parse_args([sys.argv[1]])  # Only parse robot_name
-    return args.robot_name, loop_num
+    return args.robot_name, loop_num, deform
 
 
-def rotation_to_length(yaw_angle):
+def rotation_to_length(yaw_angle, deform=1):
     """
     Convert rotation angle to arm length using array lookup
     
@@ -61,12 +71,18 @@ def rotation_to_length(yaw_angle):
     # # Clamp to valid range [0, 100]
     # length = max(0.0, min(100.0, length))
 
-
     yaw_deg = np.degrees(yaw_angle) % 360
-    es_bias = 10.0 # extend start bias
-    ee_bias = -0.0 # extend end bias
+    if deform == 0:
+        length = 50.0
+        rospy.loginfo(f"---------------Rotation: {yaw_deg:.1f}° -> Length: {length:.1f}mm (no deform)-------------")
+        return length
+
+    p_min = 0.0 # minimum length
+    p_max = 100.0 # maximum length
+    es_bias = 25.0 # extend start bias
+    ee_bias = 10.0 # extend end bias
     angle_ranges =[0,    es_bias,   90+ee_bias,    90+es_bias,      180+ee_bias,    180+es_bias,    270+ee_bias,   270+es_bias,    360+ee_bias,   360]
-    lengths =        [50,         100,           50,             0,              50,              100,            50,            0,            50]
+    lengths =        [50,         p_min,           50,             p_max,              50,              p_min,            50,            p_max,            50]
     for i in range(len(angle_ranges) - 1):
         if angle_ranges[i] <= yaw_deg < angle_ranges[i + 1]:
             length = lengths[i]
@@ -92,8 +108,9 @@ def length2angle(length):
 class ArmController:
     """Separate class to handle arm length control based on trajectory"""
     
-    def __init__(self, robot_name):
+    def __init__(self, robot_name, deform=1):
         self.robot_name = robot_name
+        self.deform = deform
         self.servo_node = None
         self.running = False
         self.traj = None
@@ -234,7 +251,7 @@ class ArmController:
                 rospy.logdebug(f"ArmController: Current yaw: {yaw_deg:.1f}° ")
                 
                 # Calculate desired arm length based on rotation
-                cmd_length = rotation_to_length(yaw_angle)
+                cmd_length = rotation_to_length(yaw_angle, self.deform)
                 
                 # Only send command if length changed significantly (reduced threshold)
 
@@ -252,7 +269,7 @@ class ArmController:
 
 def main():
     # Parse command line arguments
-    robot_name, loop_num = parse_arguments()
+    robot_name, loop_num, deform = parse_arguments()
     
     # Initialize ROS node
     rospy.init_node('rotation_mpc', anonymous=True)
@@ -262,7 +279,7 @@ def main():
         rospy.logerr(f"Robot name '{robot_name}' not found in ROS parameters! Make sure the robot is running.")
         return
     
-    rospy.loginfo(f"Starting rotation MPC for robot: {robot_name} with {loop_num} loops")
+    rospy.loginfo(f"Starting rotation MPC for robot: {robot_name} with {loop_num} loops, deform={deform}")
     
     # Wait for current robot position to be available
     current_position = None
@@ -292,7 +309,7 @@ def main():
     rospy.loginfo("Created YawRotationRoll0dTraj trajectory at current position")
     
     # Initialize arm controller
-    arm_controller = ArmController(robot_name)
+    arm_controller = ArmController(robot_name, deform)
     if not arm_controller.initialize():
         rospy.logerr("Failed to initialize arm controller")
         return

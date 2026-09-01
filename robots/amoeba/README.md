@@ -132,12 +132,26 @@ rosrun aerial_robot_base keyboard_command.py
 ```
 Then input `r` to arm the motors and input `t` to let the drone take off.
 
-### 3. Send the trajectory
+### 3. Transformation
+**After the main window printed 'Hovering'**:
+```bash
+rosrun aerial_robot_planning amb_trans.py len=75
+```
+$len=50$ is equal config.(cross config), $len \in [0,100]$
+
+
+### 4. Send the trajectory
 **After the main window printed 'Hovering'**, please run the following command to send a trajectory:
 ```bash
 rosrun aerial_robot_planning mpc_smach_node.py beetle1
 ```
 Then choose the trajectory you want the drone to perform.
+
+To turn a valve near a wall, you need send trajectory and transformation synchornously
+```bash
+rosrun aerial_robot_planning rotation_mpc.py beetle1 loop_num=1
+```
+
 
 ## Experiments
 
@@ -149,10 +163,15 @@ rosservice call /cfs_sensor_calib "{}"
 ```
 in case your launch don't have the sensor launch, it's:
 ```bash
-roslaunch cfs_sensor cfs_sensor.launch type:=PFS055YA501U6 port:=dev/
+roslaunch cfs_sensor cfs_sensor.launch type:=PFS055YA501U6 port:=/dev/ttyACM0
 ```
+if you don't know the port
 
-
+```bash
+lsusb
+# or 
+ls -l /dev/serial/by-id/ 
+```
 # Flying Hand
 
 We need two notebooks, one as ground station and the other for visual feedback.

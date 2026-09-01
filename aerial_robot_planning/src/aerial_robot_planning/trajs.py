@@ -17,6 +17,9 @@ class BaseTraj:
 
         self.frame_id = "world"
         self.child_frame_id = "cog"
+        self.position_x = 0.0
+        self.position_y = 0.0
+        self.position_z = 1.2
 
         self.t_total = None
 
@@ -31,8 +34,14 @@ class BaseTraj:
     def get_child_frame_id(self) -> str:
         return self.child_frame_id
 
+    def set_position(self, x: float, y: float, z: float):
+        self.position_x = x
+        self.position_y = y
+        self.position_z = z
+
     def get_3d_pt(self, t: float) -> Tuple[float, float, float, float, float, float, float, float, float]:
-        x, y, z, vx, vy, vz, ax, ay, az = 0.0, 0.0, 1.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        x, y, z = self.position_x, self.position_y, self.position_z
+        vx, vy, vz, ax, ay, az = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         return x, y, z, vx, vy, vz, ax, ay, az
 
     def get_3d_orientation(
@@ -670,13 +679,6 @@ class YawRotationRoll0dTraj(BaseTraj):
         self.T = 30  # total time for one full rotation cycle
         self.omega = 2 * np.pi / self.T  # angular velocity
         
-    # this set position shouldn't be here, but to compatible with rotation_mpc.py, both need refactor.
-    def set_position(self, x, y, z):
-        """Set the position where the rotation should be performed"""
-        self.position_x = x
-        self.position_y = y
-        self.position_z = z
-
     def get_3d_orientation(
         self, t: float
     ) -> Tuple[float, float, float, float, float, float, float, float, float, float]:

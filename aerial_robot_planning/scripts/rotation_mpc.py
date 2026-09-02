@@ -77,8 +77,8 @@ def rotation_to_length(yaw_angle, deform=1):
         rospy.loginfo(f"---------------Rotation: {yaw_deg:.1f}° -> Length: {length:.1f}mm (no deform)-------------")
         return length
 
-    p_min = 0.0 # minimum length
-    p_max = 100.0 # maximum length
+    p_min = 100.0 # minimum length
+    p_max = 0.0 # maximum length
     es_bias = 25.0 # extend start bias
     ee_bias = 10.0 # extend end bias
     angle_ranges =[0,    es_bias,   90+ee_bias,    90+es_bias,      180+ee_bias,    180+es_bias,    270+ee_bias,   270+es_bias,    360+ee_bias,   360]
@@ -177,8 +177,8 @@ class ArmController:
         joint_names = ['extendable_joint1', 'extendable_joint2', 
                       'extendable_joint3', 'extendable_joint4']
         servo_normalized = (servo_angle - servo_min) / (servo_max - servo_min)
-        joint_13_position = joint_max - servo_normalized * (joint_max - joint_min)
-        joint_24_position = joint_min + servo_normalized * (joint_max - joint_min)
+        joint_24_position = joint_max - servo_normalized * (joint_max - joint_min)
+        joint_13_position = joint_min + servo_normalized * (joint_max - joint_min)
         joint_positions = [joint_13_position, joint_24_position, joint_13_position, joint_24_position]
         
         joint_cmd = JointState()
